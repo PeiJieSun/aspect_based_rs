@@ -90,7 +90,7 @@ if __name__ == '__main__':
         
         # evaluate the performance of the model with following code
         model.eval()
-        '''
+        
         val_rating_loss, val_abae_loss = [], []
         for batch_idx_list in val_batch_sampler:
             user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
@@ -116,9 +116,9 @@ if __name__ == '__main__':
         if val_rating_loss < min_rating_loss:
             torch.save(model.state_dict(), train_model_path)
         min_rating_loss = min(val_rating_loss, min_rating_loss)
-        '''
+        
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
-        #log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(np.mean(train_rating_loss), np.mean(val_rating_loss), np.mean(test_rating_loss)))
-        #log.record('ABAE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(np.mean(train_abae_loss), np.mean(val_abae_loss), np.mean(test_abae_loss)))
+        log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(np.mean(train_rating_loss), np.mean(val_rating_loss), np.mean(test_rating_loss)))
+        log.record('ABAE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(np.mean(train_abae_loss), np.mean(val_abae_loss), np.mean(test_abae_loss)))
 
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
