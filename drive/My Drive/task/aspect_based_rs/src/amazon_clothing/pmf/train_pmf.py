@@ -35,7 +35,7 @@ if __name__ == '__main__':
     from pmf import pmf
     model = pmf()
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_pmf_id_sgd.mod'))
+    model.load_state_dict(torch.load('%s/train_%s_pmf_id_adabound.mod' % (conf.model_path, conf.data_name)))
     model.cuda()
     #optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         
         val_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
-            user_list, item_list, rating_list = train_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list = val_dataset.get_batch(batch_idx_list)
             prediction, _, rmse_loss = model(user_list, item_list, rating_list)    
             val_loss.extend(tensorToScalar(rmse_loss))
             val_prediction.extend(tensorToScalar(prediction))
@@ -87,13 +87,11 @@ if __name__ == '__main__':
 
         test_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
-            user_list, item_list, rating_list = train_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list = test_dataset.get_batch(batch_idx_list)
             prediction, _, rmse_loss = model(user_list, item_list, rating_list)    
             test_loss.extend(tensorToScalar(rmse_loss))
             test_prediction.extend(tensorToScalar(prediction))
         t3 = time()
-
-        import pdb; pdb.set_trace()
 
         train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
 
@@ -105,3 +103,5 @@ if __name__ == '__main__':
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
+
+        import pdb; pdb.set_trace()

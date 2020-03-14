@@ -37,21 +37,22 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
-    
+    '''
     model_params = model.state_dict()
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
     for idx in range(3, conf.vocab_sz):
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
-
+    
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
     
     model.load_state_dict(model_params)
     '''
-    model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
-    '''
+    #model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    
     model.cuda()
     #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     import adabound
@@ -59,8 +60,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_x2.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_x2.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
@@ -77,38 +78,41 @@ if __name__ == '__main__':
         t0 = time()
         model.train()
 
-        train_rating_loss, train_abae_loss = [], []
+        train_rating_loss, train_abae_loss, train_prediction = [], [], []
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
                 review_neg_embedding, user_histor_index, user_histor_value, \
                 item_histor_index, item_histor_value = train_dataset.get_batch(batch_idx_list)
-            obj, rating_loss, abae_loss = model(review_input_list, review_pos_embedding, review_neg_embedding, \
+            obj, rating_loss, abae_loss, prediction = model(review_input_list, review_pos_embedding, review_neg_embedding, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_abae_loss.extend(tensorToScalar(abae_loss))
+            train_prediction.extend(tensorToScalar(prediction))
             model.zero_grad(); obj.backward(); optimizer.step()
         t1 = time()
         
         # evaluate the performance of the model with following code
         model.eval()
         
-        val_rating_loss, val_abae_loss = [], []
+        val_rating_loss, val_abae_loss, val_prediction = [], [], []
         for batch_idx_list in val_batch_sampler:
             user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
                 review_neg_embedding, user_histor_index, user_histor_value, \
-                item_histor_index, item_histor_value = train_dataset.get_batch(batch_idx_list)
-            _, rating_loss, abae_loss = model(review_input_list, review_pos_embedding, review_neg_embedding, \
+                item_histor_index, item_histor_value = val_dataset.get_batch(batch_idx_list)
+            _, rating_loss, abae_loss, prediction = model(review_input_list, review_pos_embedding, review_neg_embedding, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             val_rating_loss.extend(tensorToScalar(rating_loss)); val_abae_loss.extend(tensorToScalar(abae_loss))
+            val_prediction.extend(tensorToScalar(prediction))
         t2 = time()
 
-        test_rating_loss, test_abae_loss = [], []
+        test_rating_loss, test_abae_loss, test_prediction = [], [], []
         for batch_idx_list in test_batch_sampler:
             user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
                 review_neg_embedding, user_histor_index, user_histor_value, \
-                item_histor_index, item_histor_value = train_dataset.get_batch(batch_idx_list)
-            _, rating_loss, abae_loss = model(review_input_list, review_pos_embedding, review_neg_embedding, \
+                item_histor_index, item_histor_value = test_dataset.get_batch(batch_idx_list)
+            _, rating_loss, abae_loss, prediction = model(review_input_list, review_pos_embedding, review_neg_embedding, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             test_rating_loss.extend(tensorToScalar(rating_loss)); test_abae_loss.extend(tensorToScalar(abae_loss))
+            test_prediction.extend(tensorToScalar(prediction))
         t3 = time()
         
         if epoch == 1:

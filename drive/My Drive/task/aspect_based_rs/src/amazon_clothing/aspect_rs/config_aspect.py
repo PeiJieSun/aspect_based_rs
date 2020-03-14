@@ -7,7 +7,7 @@ embedding_dim = 50
 
 avg_rating = 4.2442
 
-lr_abae = 1.0
+lr_abae = 0.01
 lr_rating = 1.0
 
 learning_rate = 0.001

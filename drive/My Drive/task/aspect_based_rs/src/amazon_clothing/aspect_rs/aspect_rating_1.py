@@ -106,4 +106,5 @@ class aspect_rating_1(nn.Module):
         ########################### Fourth: collect the loss and return the key information ###########################
         obj = conf.lr_rating * rating_loss + conf.lr_abae * abae_loss
 
-        return obj, rating_out_loss, abae_out_loss
+        #import pdb; pdb.set_trace()
+        return obj, rating_out_loss, abae_out_loss, prediction
