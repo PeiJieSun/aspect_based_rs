@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
-    '''
+    
     model_params = model.state_dict()
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     model.load_state_dict(model_params)
     '''
     model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
-
+    '''
     model.cuda()
     #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     import adabound
