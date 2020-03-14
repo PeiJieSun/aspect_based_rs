@@ -53,9 +53,9 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
 
     model.cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    #import adabound
-    #optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
+    import adabound
+    optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
