@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
-    '''
+    
     model_params = model.state_dict()
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
@@ -49,9 +49,9 @@ if __name__ == '__main__':
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
     
     model.load_state_dict(model_params)
-    '''
+    
     #model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
-    model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    #model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
     
     model.cuda()
     #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -60,8 +60,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_x2.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_x2.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_x3.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_x3.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)

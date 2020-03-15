@@ -50,9 +50,10 @@ class aspect_rating_1(nn.Module):
         z_s = torch.matmul(e_w.view(e_w.shape[0], e_w.shape[2], -1), ax).view(-1, conf.word_dimension) # (num_review, word_dimension)
 
         # self.transform_W(z_s): (num_review, aspect_dimension)
-        p_t = F.softmax(self.transform_W(z_s), dim=1) # (num_review, aspect_dimension)
+        #p_t = F.softmax(self.transform_W(z_s), dim=1) # (num_review, aspect_dimension)
+        p_t = self.transform_W(z_s)
         r_s = self.transform_T(p_t) # (num_review, word_dimension)
-
+        
         # cosine similarity betwee r_s and z_s
         c1 = (F.normalize(r_s, p=2, dim=1) * F.normalize(z_s, p=2, dim=1)).sum(-1, keepdim=True) # (num_review, 1)
         c1 = c1.repeat(1, conf.num_negative_reviews).view(-1) # (num_review * num_negative)
@@ -81,8 +82,8 @@ class aspect_rating_1(nn.Module):
         item_histor_tensor = \
             torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
 
-        user_aspect_embedding = torch.sparse.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
-        item_aspect_embedding = torch.sparse.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
+        user_aspect_embedding = torch.sparse.mm(user_histor_tensor, p_t) # (batch_size, mf_dimension)
+        item_aspect_embedding = torch.sparse.mm(item_histor_tensor, p_t) # (batch_size, mf_dimension)
         
         '''
         user_histor_tensor = torch.sparse.FloatTensor(user_histor_index, user_histor_value, \

@@ -1,17 +1,17 @@
-weight_decay = 0.001
+weight_decay = 0.02
 
-learning_rate = 0.001
+learning_rate = 0.005
 
-embedding_dim = 50
+embedding_dim = 100
 
 avg_rating = 4.2442
 
 num_users = 39380
 num_items = 23033
 
-batch_size = 256
+batch_size = 1024
 
-train_epochs = 1000
+train_epochs = 20
 
 vocab_size = 15350
 
