@@ -5,9 +5,10 @@ from surprise import Dataset
 from surprise import Reader
 from surprise import accuracy
 from surprise.model_selection import train_test_split
+
 import numpy as np
 
-data_name = 'amazon_clothing'
+data_name = 'amazon_toys_games'
 # path to dataset file
 train_file_path = os.path.expanduser('/content/drive/My Drive/task/aspect_based_rs/data/%s/surprise.%s.rating.train' % (data_name, data_name))
 val_file_path = os.path.expanduser('/content/drive/My Drive/task/aspect_based_rs/data/%s/surprise.%s.rating.val' % (data_name, data_name))
@@ -30,7 +31,7 @@ trainset, valset, testset = train_data.construct_trainset(train_data.raw_ratings
 x_trainset = train_data.construct_testset(train_data.raw_ratings)
 
 # We'll use the famous SVD algorithm.
-algo = SVD(n_factors=32 , biased=True, verbose=True)
+algo = SVD(n_factors=32, biased=True, verbose=True)
 
 # Train the algorithm on the trainset, and predict ratings for the testset
 algo.fit(trainset)

@@ -26,8 +26,6 @@ def generate_review(review):
 
 def load_all():
     train_user_historical_review_dict, train_item_historical_review_dict = defaultdict(list), defaultdict(list)
-    val_user_historical_review_dict, val_item_historical_review_dict = defaultdict(list), defaultdict(list)
-    test_user_historical_review_dict, test_item_historical_review_dict = defaultdict(list), defaultdict(list)
 
     train_data = {}
     f = open(train_data_path)
@@ -36,8 +34,10 @@ def load_all():
         idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
-        train_user_historical_review_dict[user].append(idx)
-        train_item_historical_review_dict[item].append(idx)
+        if len(train_user_historical_review_dict[user]) < conf.u_max_r:
+            train_user_historical_review_dict[user].append(idx)
+        if len(train_item_historical_review_dict[item]) < conf.i_max_r:
+            train_item_historical_review_dict[item].append(idx)
 
     val_data = {}
     f = open(val_data_path)
@@ -46,8 +46,6 @@ def load_all():
         idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         val_data[idx] = [user, item, rating, review_in]
-        val_user_historical_review_dict[user].append(idx)
-        val_item_historical_review_dict[item].append(idx)
     
     test_data = {}
     f = open(test_data_path)
@@ -56,17 +54,10 @@ def load_all():
         idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         test_data[idx] = [user, item, rating, review_in]
-        test_user_historical_review_dict[user].append(idx)
-        test_item_historical_review_dict[item].append(idx)
     
     train_review_embedding = np.load(train_review_embedding_path, allow_pickle=True).item()
-    val_review_embedding = np.load(val_review_embedding_path, allow_pickle=True).item()
-    test_review_embedding = np.load(test_review_embedding_path, allow_pickle=True).item()
 
-    return train_data, val_data, test_data, train_review_embedding, val_review_embedding, test_review_embedding,\
-    train_user_historical_review_dict, train_item_historical_review_dict,\
-    val_user_historical_review_dict, val_item_historical_review_dict,\
-    test_user_historical_review_dict, test_item_historical_review_dict
+    return train_data, val_data, test_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict
 
 class TrainData():
     def __init__(self, train_data, review_embedding_dict, 

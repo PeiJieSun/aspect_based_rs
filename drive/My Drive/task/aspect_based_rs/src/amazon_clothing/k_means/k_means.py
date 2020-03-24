@@ -84,7 +84,7 @@ if use_cuda:
     K = 20
     clx, c = KMeans(x, K)
     check_dir('%s/%s.k_means' % (conf.target_path, conf.data_name))
-    #np.save('%s/%s.k_means' % (conf.target_path, conf.data_name), tensorToScalar(c))
+    np.save('%s/%s.k_means' % (conf.target_path, conf.data_name), tensorToScalar(c))
     
     # output the related words to each aspect
     x_i = F.normalize(x[:, None, :], p=2, dim=2) # (Npoints, 1, D)

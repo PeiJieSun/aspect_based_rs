@@ -1,4 +1,4 @@
-word_dimension = 50
+word_dimension = 200
 aspect_dimension = 20
 
 num_users = 39380
@@ -14,8 +14,11 @@ learning_rate = 0.001
 
 vocab_sz = 15350
 batch_size = 4096
-train_epochs = 500
+train_epochs = 30
 weight_decay = 0.001
+
+u_max_r = 7
+i_max_r = 14
 
 num_negative_reviews = 1
 

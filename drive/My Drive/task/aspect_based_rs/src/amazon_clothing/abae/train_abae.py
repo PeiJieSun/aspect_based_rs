@@ -35,7 +35,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from abae import abae
     model = abae()
-    '''
+    
     model_params = model.state_dict()
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
     
     model.load_state_dict(model_params)
-    '''
-    model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    
+    #model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
     
     model.cuda()
     #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_abae_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_abae_id_adam.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_abae_id_adam.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_abae_id_00.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_abae_id_00.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_review_embedding)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
             _, _, _, review_input, review_pos_embedding, review_neg_embedding = train_dataset.get_batch(batch_idx_list)
             out_loss, loss = model(review_input, review_pos_embedding, review_neg_embedding)
             train_loss.extend(tensorToScalar(out_loss))
-            #model.zero_grad(); loss.backward(); optimizer.step()
+            model.zero_grad(); loss.backward(); optimizer.step()
         t1 = time()
 
         # evaluate the performance of the model with following code
@@ -109,4 +109,4 @@ if __name__ == '__main__':
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)))
 
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()

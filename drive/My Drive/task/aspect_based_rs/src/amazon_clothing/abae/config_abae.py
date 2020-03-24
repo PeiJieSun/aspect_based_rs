@@ -1,5 +1,5 @@
-vocab_sz = 15350
-word_dimension = 50
+vocab_sz = 15350 + 3
+word_dimension = 200
 hidden_size = 50
 batch_size = 512
 

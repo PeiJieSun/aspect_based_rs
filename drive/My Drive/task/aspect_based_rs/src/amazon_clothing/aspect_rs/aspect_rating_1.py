@@ -21,7 +21,7 @@ class aspect_rating_1(nn.Module):
 
         # loss function
         self.mse_loss = nn.MSELoss(reduction='none')
-        self.abae_mse_loss = nn.MSELoss()
+        self.abae_mse_loss = nn.MSELoss(reduction='sum')
         self.margin_ranking_loss = nn.MarginRankingLoss(margin=1.0, reduction='none')
     
     # user/item/label: batch user/item/label list
@@ -68,7 +68,7 @@ class aspect_rating_1(nn.Module):
         
         abae_out_loss = self.margin_ranking_loss(c1, c2, torch.FloatTensor([1.0]).cuda())
 
-        J_loss = torch.mean(abae_out_loss)
+        J_loss = torch.sum(abae_out_loss)
 
         transform_T_weight = F.normalize(self.transform_T.weight, p=2, dim=0) # word_dimension * aspect_dimension
         U_loss = self.abae_mse_loss(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
@@ -103,9 +103,9 @@ class aspect_rating_1(nn.Module):
         prediction = output_emb.sum(-1, keepdims=True) + self.avg_rating # (batch_size, 1)
 
         rating_out_loss = self.mse_loss(prediction.view(-1), label)
-        rating_loss = torch.mean(rating_out_loss)
+        rating_loss = torch.sum(rating_out_loss)
         ########################### Fourth: collect the loss and return the key information ###########################
         obj = conf.lr_rating * rating_loss + conf.lr_abae * abae_loss
 
         #import pdb; pdb.set_trace()
-        return obj, rating_out_loss, abae_out_loss, prediction
+        return obj, rating_out_loss, abae_out_loss, prediction, user_aspect_embedding, item_aspect_embedding

@@ -11,7 +11,7 @@ import config_abae as conf
 PAD = 0; SOS = 1; EOS = 2
 
 margin_ranking_loss = nn.MarginRankingLoss(margin=1.0, reduction='none')
-mse_loss = nn.MSELoss()
+mse_loss = nn.MSELoss(reduction='sum')
 
 class abae(nn.Module):
     def __init__(self):
