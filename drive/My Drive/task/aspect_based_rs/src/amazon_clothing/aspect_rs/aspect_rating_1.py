@@ -21,8 +21,16 @@ class aspect_rating_1(nn.Module):
 
         # loss function
         self.mse_loss = nn.MSELoss(reduction='none')
-        self.abae_mse_loss = nn.MSELoss(reduction='sum')
+        self.abae_mse_loss = nn.MSELoss(reduction='mean')
         self.margin_ranking_loss = nn.MarginRankingLoss(margin=1.0, reduction='none')
+
+        # FM parameters
+        # ---------------------------fc_linear------------------------------
+        self.fc = nn.Linear(conf.aspect_dimension, 1)
+        # ------------------------------FM----------------------------------
+        self.fm_V = nn.Parameter(torch.randn(conf.aspect_dimension, 10))
+        self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
+        self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
     
     # user/item/label: batch user/item/label list
     # user_histor/item_histor: batch user/item historical review id list, OrderDict
@@ -41,6 +49,8 @@ class aspect_rating_1(nn.Module):
         e_w = self.word_embedding(w) # (num_review, sequence_length, word_dimension)
         y_s = y_s.view(y_s.shape[0], y_s.shape[1], 1) # (num_review, word_dimension, 1)
         
+        #import pdb; pdb.set_trace()
+
         # self.trainsofmr_M(e_w): (num_review, sequence_length, word_dimension)
         dx = torch.matmul(self.transform_M(e_w), y_s) # (num_review, sequence_length, 1)
         ax = F.softmax(dx, dim=1) # (num_review, sequence_length, 1)     
@@ -68,7 +78,7 @@ class aspect_rating_1(nn.Module):
         
         abae_out_loss = self.margin_ranking_loss(c1, c2, torch.FloatTensor([1.0]).cuda())
 
-        J_loss = torch.sum(abae_out_loss)
+        J_loss = torch.mean(abae_out_loss)
 
         transform_T_weight = F.normalize(self.transform_T.weight, p=2, dim=0) # word_dimension * aspect_dimension
         U_loss = self.abae_mse_loss(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
@@ -98,12 +108,35 @@ class aspect_rating_1(nn.Module):
         ########################### Third: calculate the predicted rating ###########################
         # decode the aspect-based user and item embedding to the rating
         # rating = Decode(aspect-based user & item embedding) + Decode(matrix factorization)
+        
         output_emb = user_aspect_embedding * item_aspect_embedding # (batch_size, mf_dimension)
 
-        prediction = output_emb.sum(-1, keepdims=True) + self.avg_rating # (batch_size, 1)
+        #prediction = output_emb.sum(-1, keepdims=True) + self.avg_rating # (batch_size, 1)
+
+        '''
+        y = w_0 + \sum {w_ix_i} + \sum_{i=1}\sum_{j=i+1}<v_i, v_j>x_ix_j
+        factorization machine layer
+        refer: https://github.com/vanzytay/KDD2018_MPCN/blob/master/tylib/lib
+                      /compose_op.py#L13
+        '''
+
+        input_vec = output_emb
+
+        # linear part: first two items
+        fm_linear_part = self.fc(input_vec)
+
+        fm_interactions_1 = torch.mm(input_vec, self.fm_V)
+        fm_interactions_1 = torch.pow(fm_interactions_1, 2)
+
+        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
+                                     torch.pow(self.fm_V, 2))
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part
+
+        prediction = fm_output + self.avg_rating #+ self.b_users[uids] + self.b_items[iids]
 
         rating_out_loss = self.mse_loss(prediction.view(-1), label)
-        rating_loss = torch.sum(rating_out_loss)
+        rating_loss = torch.mean(rating_out_loss)
+
         ########################### Fourth: collect the loss and return the key information ###########################
         obj = conf.lr_rating * rating_loss + conf.lr_abae * abae_loss
 

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     
     model.load_state_dict(model_params)
     
-    #model.load_state_dict(torch.load('%s/train_%s_aspect_rating_1_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_x3.mod'))
     #model.load_state_dict(torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name)))
     
     model.cuda()
@@ -58,13 +58,13 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_x3.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_x3.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_x4.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_x4.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
-    val_dataset = data_utils.TrainData(val_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
-    test_dataset = data_utils.TrainData(test_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
+    val_dataset = data_utils.ValData(val_data, train_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
+    test_dataset = data_utils.ValData(test_data, train_data, train_review_embedding, train_user_historical_review_dict, train_item_historical_review_dict)
 
     train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
     val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
@@ -86,7 +86,9 @@ if __name__ == '__main__':
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_abae_loss.extend(tensorToScalar(abae_loss))
             train_prediction.extend(tensorToScalar(prediction))
+            #import pdb; pdb.set_trace()
             model.zero_grad(); obj.backward(); optimizer.step()
+            #import pdb; pdb.set_trace()
         t1 = time()
         
         # evaluate the performance of the model with following code

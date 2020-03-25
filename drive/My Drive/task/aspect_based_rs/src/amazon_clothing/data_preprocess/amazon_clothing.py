@@ -10,6 +10,8 @@ from gensim import utils
 
 import config as conf 
 
+from copy import deepcopy
+
 PAD = 0; SOS = 1; EOS = 2
 
 def check_dir(file_path):
@@ -105,16 +107,25 @@ for value in train_data_list:
             if word in vocab_without_stop_words and word in vocab_w2v:
                 review.append(w2v_model.wv.vocab[word].index + 3)
                 review_embedding.append(w2v_model.wv[word])
+        g_review = []
+        for word in review_text:
+            if word in vocab_w2v:
+                g_review.append(w2v_model.wv.vocab[word].index + 3)
+        if len(g_review) > 30:
+            g_review = g_review[:30]
+        else:
+            g_review.extend([PAD]*(30-len(g_review)))
         if len(review) > 0: 
             if len(review) > MAX_SENTENCE_LENGTH:
-                x_review = review[:MAX_SENTENCE_LENGTH]
+                x_review = deepcopy(review[:MAX_SENTENCE_LENGTH])
                 review = review[:MAX_SENTENCE_LENGTH]
                 review_embedding = np.mean(review_embedding[:MAX_SENTENCE_LENGTH], axis=0)
             else:
-                x_review = review
+                x_review = deepcopy(review)
                 review.extend([PAD]*(MAX_SENTENCE_LENGTH-len(review)))
                 review_embedding = np.mean(review_embedding, axis=0)
-            train_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, 'item': item, 'rating': rating, 'review': review, 'x_review': x_review}))
+            train_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, \
+                'item': item, 'rating': rating, 'review': review, 'x_review': x_review, 'g_review': g_review}))
             train_review_embedding[idx] = review_embedding
             idx += 1
 np.save(train_review_embedding_path, train_review_embedding)
@@ -133,14 +144,25 @@ for value in val_data_list:
                 if word in vocab_without_stop_words and word in vocab_w2v:
                     review.append(w2v_model.wv.vocab[word].index + 3)
                     review_embedding.append(w2v_model.wv[word])
+            g_review = []
+            for word in review_text:
+                if word in vocab_w2v:
+                    g_review.append(w2v_model.wv.vocab[word].index + 3)
+            if len(g_review) > 30:
+                g_review = g_review[:30]
+            else:
+                g_review.extend([PAD]*(30-len(g_review)))
             if len(review) > 0:
                 if len(review) > MAX_SENTENCE_LENGTH:
+                    x_review = deepcopy(review[:MAX_SENTENCE_LENGTH])
                     review = review[:MAX_SENTENCE_LENGTH]
                     review_embedding = np.mean(review_embedding[:MAX_SENTENCE_LENGTH], axis=0)
                 else:
+                    x_review = deepcopy(review)
                     review.extend([PAD]*(MAX_SENTENCE_LENGTH-len(review)))
                     review_embedding = np.mean(review_embedding, axis=0)
-                val_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, 'item': item, 'rating': rating, 'review': review, 'x_review': x_review}))
+                val_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, \
+                    'item': item, 'rating': rating, 'review': review, 'x_review': x_review, 'g_review': g_review}))
                 val_review_embedding[idx] = review_embedding
                 idx += 1
 np.save(val_review_embedding_path, val_review_embedding)
@@ -159,14 +181,25 @@ for value in test_data_list:
                 if word in vocab_without_stop_words and word in vocab_w2v:
                     review.append(w2v_model.wv.vocab[word].index + 3)
                     review_embedding.append(w2v_model.wv[word])
+            g_review = []
+            for word in review_text:
+                if word in vocab_w2v:
+                    g_review.append(w2v_model.wv.vocab[word].index + 3)
+            if len(g_review) > 30:
+                g_review = g_review[:30]
+            else:
+                g_review.extend([PAD]*(30-len(g_review)))
             if len(review) > 0:
                 if len(review) > MAX_SENTENCE_LENGTH:
+                    x_review = deepcopy(review[:MAX_SENTENCE_LENGTH])
                     review = review[:MAX_SENTENCE_LENGTH]
                     review_embedding = np.mean(review_embedding[:MAX_SENTENCE_LENGTH], axis=0)
                 else:
+                    x_review = deepcopy(review)
                     review.extend([PAD]*(MAX_SENTENCE_LENGTH-len(review)))
                     review_embedding = np.mean(review_embedding, axis=0)
-                test_data.write('%s\n' % json.dumps({'idx': idx,'user': user, 'item': item, 'rating': rating, 'review': review, 'x_review': x_review}))
+                test_data.write('%s\n' % json.dumps({'idx': idx,'user': user, \
+                    'item': item, 'rating': rating, 'review': review, 'x_review': x_review, 'g_review': g_review}))
                 test_review_embedding[idx] = review_embedding
                 idx += 1
 np.save(test_review_embedding_path, test_review_embedding)

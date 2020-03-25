@@ -1,6 +1,5 @@
 vocab_sz = 15350 + 3
 word_dimension = 200
-hidden_size = 50
 batch_size = 512
 
 learning_rate = 1e-3

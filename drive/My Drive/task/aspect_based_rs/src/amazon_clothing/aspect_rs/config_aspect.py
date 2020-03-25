@@ -12,7 +12,7 @@ lr_rating = 1.0
 
 learning_rate = 0.001
 
-vocab_sz = 15350
+vocab_sz = 15350 + 3
 batch_size = 4096
 train_epochs = 30
 weight_decay = 0.001
