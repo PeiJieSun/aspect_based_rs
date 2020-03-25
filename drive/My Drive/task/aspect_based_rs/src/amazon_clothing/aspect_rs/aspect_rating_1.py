@@ -31,6 +31,15 @@ class aspect_rating_1(nn.Module):
         self.fm_V = nn.Parameter(torch.randn(conf.aspect_dimension, 10))
         self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
         self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
+
+        self.init_weight()
+
+    def init_weight(self):
+        nn.init.uniform_(self.fc.weight, -0.05, 0.05)
+        nn.init.constant_(self.fc.bias, 0.0)
+        nn.init.uniform_(self.b_users, a=0, b=0.1)
+        nn.init.uniform_(self.b_items, a=0, b=0.1)
+        nn.init.uniform_(self.fm_V, -0.05, 0.05)
     
     # user/item/label: batch user/item/label list
     # user_histor/item_histor: batch user/item historical review id list, OrderDict
@@ -133,6 +142,8 @@ class aspect_rating_1(nn.Module):
         fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part
 
         prediction = fm_output + self.avg_rating #+ self.b_users[uids] + self.b_items[iids]
+
+        #import pdb; pdb.set_trace()
 
         rating_out_loss = self.mse_loss(prediction.view(-1), label)
         rating_loss = torch.mean(rating_out_loss)
