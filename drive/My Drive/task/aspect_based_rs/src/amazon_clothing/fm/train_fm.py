@@ -9,8 +9,8 @@ from time import time
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_pmf as data_utils
-import config_pmf as conf
+import DataModule_fm as data_utils
+import config_fm as conf
 
 from Logging import Logging
 
@@ -32,18 +32,12 @@ if __name__ == '__main__':
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
     
     ############################## CREATE MODEL ##############################
-    from pmf import pmf
-    model = pmf()
+    from fm import fm
+    model = fm()
 
-    #import pdb; pdb.set_trace()
-    
-    #model.load_state_dict(torch.load('%s/train_%s_pmf_id_adabound.mod' % (conf.model_path, conf.data_name)))
     model.cuda()
-    optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-
-    #import adabound
-    #optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1, weight_decay=conf.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_pmf_id_x.log' % (conf.out_path, conf.data_name))
@@ -111,7 +105,7 @@ if __name__ == '__main__':
         log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
         log.record('user embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.embedding_user.weight).item(), torch.var(model.embedding_user.weight).item()))
+            (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
         log.record('item embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.embedding_item.weight).item(), torch.var(model.embedding_item.weight).item()))
+            (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
         #import pdb; pdb.set_trace()

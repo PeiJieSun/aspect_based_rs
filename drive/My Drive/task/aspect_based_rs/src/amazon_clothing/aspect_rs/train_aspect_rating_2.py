@@ -10,7 +10,7 @@ from copy import deepcopy
 from gensim.models import Word2Vec
 
 import DataModule_aspect as data_utils
-import config_aspect as conf
+import config_aspect_2 as conf
 
 from Logging import Logging
 
@@ -33,10 +33,12 @@ if __name__ == '__main__':
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
     
     ############################## CREATE MODEL ##############################
-    from aspect_rating_1 import aspect_rating_1
-    model = aspect_rating_1()
+    from aspect_rating_2 import aspect_rating_2
+    model = aspect_rating_2()
     
     model_params = model.state_dict()
+
+
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -45,9 +47,15 @@ if __name__ == '__main__':
     
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
-    
+
+
+    '''
+    abae_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
+    for param in abae_params:
+        model_params[param] = abae_params[param]
     model.load_state_dict(model_params)
-    
+    '''
+    #import pdb; pdb.set_trace()
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_x3.mod'))
 
     model.cuda()
@@ -58,8 +66,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_11.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_11.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_24.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_24.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_review_embedding, \
@@ -130,7 +138,7 @@ if __name__ == '__main__':
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE: Train loss:{:.4f}'.format(np.mean(train_abae_loss)))
-        log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(
+        log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(\
             np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))))
 
         log.record('Train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
