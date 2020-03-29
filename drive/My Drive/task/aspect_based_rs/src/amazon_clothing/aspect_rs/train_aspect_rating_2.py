@@ -38,7 +38,7 @@ if __name__ == '__main__':
     
     model_params = model.state_dict()
 
-
+    '''
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -47,16 +47,15 @@ if __name__ == '__main__':
     
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
-
-
     '''
+
     abae_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
     for param in abae_params:
         model_params[param] = abae_params[param]
     model.load_state_dict(model_params)
-    '''
+    
     #import pdb; pdb.set_trace()
-    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_x3.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_24.mod'))
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -87,7 +86,8 @@ if __name__ == '__main__':
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
         model.train()
-
+        
+        #import pdb; pdb.set_trace()
         train_rating_loss, train_abae_loss, train_prediction = [], [], []
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
@@ -107,7 +107,8 @@ if __name__ == '__main__':
                 item_aspect_embedding[item] = tensorToScalar(item_aspect_embed[idx])
 
         t1 = time()
-        
+        #import pdb; pdb.set_trace()
+
         # Update user_embedding & item_embedding with generated aspect-based user&item embedding
         model.user_embedding.weight = nn.Parameter(torch.FloatTensor(user_aspect_embedding).cuda())
         model.item_embedding.weight = nn.Parameter(torch.FloatTensor(item_aspect_embedding).cuda())
@@ -135,6 +136,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), train_model_path)
             print('save model')
         min_rating_loss = min(np.sqrt(np.mean(val_rating_loss)), min_rating_loss)
+        #import pdb; pdb.set_trace()
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE: Train loss:{:.4f}'.format(np.mean(train_abae_loss)))

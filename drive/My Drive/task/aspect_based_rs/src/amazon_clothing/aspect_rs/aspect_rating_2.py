@@ -10,7 +10,7 @@ class aspect_rating_2(nn.Module):
 
         # parameters for aspect extraction
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension) 
-        self.word_embedding.weight.requires_grad = False
+        #self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
@@ -26,10 +26,9 @@ class aspect_rating_2(nn.Module):
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
-        self.fm_V = nn.Parameter(torch.randn(16, dim))
-        self.mlp = nn.Linear(16, 16)
-        self.h = nn.Linear(16, 1, bias=False)
-        self.drop_out = nn.Dropout(0.5)
+        self.fm_V = nn.Parameter(torch.randn(dim, 10))
+        self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
+        self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
 
         self.mse_func_1 = nn.MSELoss(reduction='none')
         self.mse_func_2 = nn.MSELoss()
@@ -41,10 +40,11 @@ class aspect_rating_2(nn.Module):
         nn.init.uniform_(self.user_embedding.weight, a=-0.1, b=0.1)
         nn.init.uniform_(self.item_embedding.weight, a=-0.1, b=0.1)
 
-        nn.init.uniform_(self.fc.weight, -0.1, 0.1)
-        nn.init.constant_(self.fc.bias, 0.1)
-        nn.init.uniform_(self.fm_V, -0.1, 0.1)
-        nn.init.uniform_(self.h.weight, -0.1, 0.1)
+        nn.init.uniform_(self.fc.weight, -0.05, 0.05)
+        nn.init.constant_(self.fc.bias, 0.0)
+        nn.init.uniform_(self.b_users, a=0, b=0.1)
+        nn.init.uniform_(self.b_items, a=0, b=0.1)
+        nn.init.uniform_(self.fm_V, -0.05, 0.05)
 
     def forward(self, historical_review, # (num_review, sequence_length)
         review_positive, # (num_review, word_dimension)
@@ -105,8 +105,8 @@ class aspect_rating_2(nn.Module):
         '''
 
         # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
+        user_aspect_embed = torch.mm(user_histor_tensor, p_t) # (batch_size, mf_dimension)
+        item_aspect_embed = torch.mm(item_histor_tensor, p_t) # (batch_size, mf_dimension)
         
         u_out = user_aspect_embed #u_fea.view(-1, 1, conf.common_dimension)
         i_out = item_aspect_embed #i_fea.view(-1, 1, conf.common_dimension)
@@ -117,15 +117,13 @@ class aspect_rating_2(nn.Module):
         input_vec = torch.cat([u_out, i_out], 1)
 
         fm_linear_part = self.fc(input_vec)
-        fm_interactions_1 = torch.mm(input_vec, self.fm_V.t())
+
+        fm_interactions_1 = torch.mm(input_vec, self.fm_V)
         fm_interactions_1 = torch.pow(fm_interactions_1, 2)
 
-        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2), torch.pow(self.fm_V, 2).t())
-        bilinear = 0.5 * (fm_interactions_1 - fm_interactions_2)
-
-        out = F.relu(self.mlp(bilinear))
-        out = self.drop_out(out)
-        fm_output = self.h(out) + fm_linear_part #+ conf.avg_rating
+        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
+                                     torch.pow(self.fm_V, 2))
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + conf.avg_rating #+ self.b_users[user] + self.b_items[item]
 
         prediction = fm_output.squeeze(1)
         
@@ -133,7 +131,7 @@ class aspect_rating_2(nn.Module):
         mse_loss = self.mse_func_2(prediction, label)
 
         # collect the loss of abae and rating prediction
-        obj_loss = mse_loss# + J_loss + U_loss
+        obj_loss = mse_loss + 0.01*J_loss + 0.01*U_loss
         
         return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
@@ -151,15 +149,13 @@ class aspect_rating_2(nn.Module):
         input_vec = torch.cat([u_out, i_out], 1)
 
         fm_linear_part = self.fc(input_vec)
-        fm_interactions_1 = torch.mm(input_vec, self.fm_V.t())
+
+        fm_interactions_1 = torch.mm(input_vec, self.fm_V)
         fm_interactions_1 = torch.pow(fm_interactions_1, 2)
 
-        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2), torch.pow(self.fm_V, 2).t())
-        bilinear = 0.5 * (fm_interactions_1 - fm_interactions_2)
-
-        out = F.relu(self.mlp(bilinear))
-        out = self.drop_out(out)
-        fm_output = self.h(out) + fm_linear_part #+ conf.avg_rating
+        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
+                                     torch.pow(self.fm_V, 2))
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + conf.avg_rating #+ self.b_users[user] + self.b_items[item]
         
         prediction = fm_output.squeeze(1)
         mse_loss = self.mse_func_1(prediction, label)
