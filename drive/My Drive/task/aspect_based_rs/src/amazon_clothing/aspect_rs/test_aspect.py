@@ -17,7 +17,7 @@ def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
 if __name__ == '__main__':
-    aspect_params = torch.load('%s/train_%s_abae_id_adabound.mod' % (conf.model_path, conf.data_name))
+    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_10.mod')
     c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
 
     #k_means_weight = np.load('/content/drive/My Drive/task/aspect_based_rs/data/amazon_electronics/electronics.k_means.npy')

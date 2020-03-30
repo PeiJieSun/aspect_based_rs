@@ -97,11 +97,13 @@ if __name__ == '__main__':
 
         train_loss, val_loss, test_loss = np.sqrt(np.mean(train_loss)), np.sqrt(np.mean(val_loss)), np.sqrt(np.mean(test_loss))
 
+        '''
         if epoch == 1:
             min_loss = val_loss
         if val_loss < min_loss:
             torch.save(model.state_dict(), train_model_path)
         min_loss = min(val_loss, min_loss)
+        '''
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))

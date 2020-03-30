@@ -123,7 +123,7 @@ class aspect_rating_1(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + conf.avg_rating #+ self.b_users[user] + self.b_items[item]
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
 
         prediction = fm_output.squeeze(1)
         
@@ -131,7 +131,7 @@ class aspect_rating_1(nn.Module):
         mse_loss = self.mse_func_2(prediction, label)
 
         # collect the loss of abae and rating prediction
-        obj_loss = mse_loss + 0.1*J_loss + 0.1*U_loss
+        obj_loss = mse_loss #+ 0.1*J_loss + 0.1*U_loss
         
         return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
@@ -155,7 +155,7 @@ class aspect_rating_1(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + conf.avg_rating #+ self.b_users[user] + self.b_items[item]
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
 
         prediction = fm_output.squeeze(1)
         mse_loss = self.mse_func_1(prediction, label)
