@@ -15,10 +15,6 @@ train_data_path = '%s/%s.train.data' % (conf.target_path, conf.data_name)
 val_data_path = '%s/%s.val.data' % (conf.target_path, conf.data_name)
 test_data_path = '%s/%s.test.data' % (conf.target_path, conf.data_name)
 
-train_review_embedding_path = '%s/%s.train.review_embedding.npy' % (conf.target_path, conf.data_name)
-val_review_embedding_path = '%s/%s.val.review_embedding.npy' % (conf.target_path, conf.data_name)
-test_review_embedding_path = '%s/%s.test.review_embedding.npy' % (conf.target_path, conf.data_name)
-
 def generate_review(review):
     review_in = [SOS]
     review_in.extend(review)
@@ -55,19 +51,15 @@ def load_all():
         review_in = generate_review(review)
         test_data[idx] = [user, item, rating, review_in]
     
-    train_review_embedding = np.load(train_review_embedding_path, allow_pickle=True).item()
-
     #import pdb; pdb.set_trace()
-    return train_data, val_data, test_data, train_review_embedding, \
-        train_user_historical_review_dict, train_item_historical_review_dict
+    return train_data, val_data, test_data, train_user_historical_review_dict, train_item_historical_review_dict
 
 class TrainData():
-    def __init__(self, train_data, review_embedding_dict, 
+    def __init__(self, train_data, 
         user_historical_review_dict, 
         item_historical_review_dict):
         self.train_data = train_data
         self.length = len(train_data.keys())
-        self.review_embedding_dict = review_embedding_dict
         self.user_historical_review_dict = user_historical_review_dict
         self.item_historical_review_dict = item_historical_review_dict
 
@@ -114,23 +106,21 @@ class TrainData():
         item_histor_index = [item_histor_index_l1, item_histor_index_l2]
         
         # prepare review positive/negative embedding, and review words input
-        review_pos_embedding, review_neg_embedding = [], []
+        neg_review = []
         review_input_list = []
         for review_idx in review_idx_list:
             review_input_list.append(self.train_data[review_idx][3])
-            review_pos_embedding.append(self.review_embedding_dict[review_idx])
             for _ in range(conf.num_negative_reviews):
                 j = np.random.randint(self.length-1)
                 while j == idx:
                     j = np.random.randint(self.length-1)
-                review_neg_embedding.append(self.review_embedding_dict[j])
+                neg_review.append(self.train_data[j][3])
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \
         torch.LongTensor(np.array(review_input_list)).cuda(),\
-        torch.FloatTensor(review_pos_embedding).cuda(),\
-        torch.FloatTensor(review_neg_embedding).cuda(),\
+        torch.LongTensor(np.array(neg_review)).cuda(),\
         torch.LongTensor(user_histor_index).cuda(),\
         torch.FloatTensor(user_histor_value).cuda(),\
         torch.LongTensor(item_histor_index).cuda(),\

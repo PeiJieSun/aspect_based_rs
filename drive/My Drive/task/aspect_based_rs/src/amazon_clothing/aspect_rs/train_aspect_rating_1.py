@@ -27,7 +27,7 @@ if __name__ == '__main__':
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
     t0 = time()
-    train_data, val_data, test_data, train_review_embedding, \
+    train_data, val_data, test_data, \
         train_user_historical_review_dict, train_item_historical_review_dict = data_utils.load_all()
     t1 = time()
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
@@ -62,8 +62,7 @@ if __name__ == '__main__':
     train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_15.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
-    train_dataset = data_utils.TrainData(train_data, train_review_embedding, \
-        train_user_historical_review_dict, train_item_historical_review_dict)
+    train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
     val_dataset = data_utils.ValData(val_data)
     test_dataset = data_utils.ValData(test_data)
 
@@ -82,11 +81,11 @@ if __name__ == '__main__':
 
         train_rating_loss, train_abae_loss, train_prediction = [], [], []
         for batch_idx_list in train_batch_sampler:
-            user_list, item_list, rating_list, review_input_list, review_pos_embedding, \
-                review_neg_embedding, user_histor_index, user_histor_value, \
+            user_list, item_list, rating_list, review_input_list, \
+                neg_review, user_histor_index, user_histor_value, \
                 item_histor_index, item_histor_value = train_dataset.get_batch(batch_idx_list)
             obj, rating_loss, abae_loss, prediction, user_aspect_embed, item_aspect_embed = \
-                model(review_input_list, review_pos_embedding, review_neg_embedding, \
+                model(review_input_list, neg_review, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             #import pdb; pdb.set_trace()
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_abae_loss.extend(tensorToScalar(abae_loss))

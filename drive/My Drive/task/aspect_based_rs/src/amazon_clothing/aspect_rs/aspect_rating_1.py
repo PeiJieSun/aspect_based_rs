@@ -47,14 +47,20 @@ class aspect_rating_1(nn.Module):
         nn.init.uniform_(self.fm_V, -0.05, 0.05)
 
     def forward(self, historical_review, # (num_review, sequence_length)
-        review_positive, # (num_review, word_dimension)
-        review_negative, # (num_review * num_negative, word_dimension)
+        neg_review, # (num_review * num_negative, word_dimension)
         user, item, label, # (batch_size, 1)
         user_histor_index, user_histor_value, item_histor_index, item_histor_value):
         ########################### First: encode the historical review, and get the aspect-based review embedding ###########################
         # encode the historical reviews of the target user and item(mapping the historical reviews of the target user and item to the aspect space)
         # historical_review_set ==> aspect-based historical review embedding
-        w = historical_review; y_s = review_positive; z_n = review_negative
+        w = historical_review; 
+
+        positive_review_embed = self.word_embedding(w) # (batch_size, sequence_length, word_dimension)
+        negative_review_embed = self.word_embedding(neg_review) # (batch_size*num_negative_reviews, sequence_length, word_dimension)
+
+        y_s = torch.mean(positive_review_embed, 1).view(-1, conf.word_dimension) # (batch_size, word_dimension)
+        z_n = torch.mean(negative_review_embed, 1).view(-1, conf.word_dimension) # (batch_size * num_negative_reviews, word_dimension)
+
         e_w = self.word_embedding(w) # (num_review, sequence_length, word_dimension)
         y_s = y_s.view(y_s.shape[0], y_s.shape[1], 1) # (num_review, word_dimension, 1)
         
