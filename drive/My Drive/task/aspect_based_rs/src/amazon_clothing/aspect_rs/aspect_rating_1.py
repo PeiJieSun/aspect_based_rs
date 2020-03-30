@@ -105,8 +105,8 @@ class aspect_rating_1(nn.Module):
         '''
 
         # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, p_t) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, p_t) # (batch_size, mf_dimension)
+        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
+        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
         
         u_out = user_aspect_embed #u_fea.view(-1, 1, conf.common_dimension)
         i_out = item_aspect_embed #i_fea.view(-1, 1, conf.common_dimension)
