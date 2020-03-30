@@ -18,11 +18,11 @@ def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
 if __name__ == '__main__':
-    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_00.mod')
+    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_abae_id_02.mod')
     c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
 
-    k_means_weight = np.load('/content/drive/My Drive/task/aspect_based_rs/data/amazon_clothing/amazon_clothing.k_means.npy')
-    c = torch.FloatTensor(k_means_weight).cuda() # (aspect_dimesion, word_dimension)
+    #k_means_weight = np.load('/content/drive/My Drive/task/aspect_based_rs/data/amazon_clothing/amazon_clothing.k_means.npy')
+    #c = torch.FloatTensor(k_means_weight).cuda() # (aspect_dimesion, word_dimension)
 
     x = aspect_params['word_embedding.weight'] # (num_words, word_dimension)
 

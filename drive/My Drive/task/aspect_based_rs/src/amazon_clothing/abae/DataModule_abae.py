@@ -83,3 +83,30 @@ class TrainData():
         torch.LongTensor(np.array(review_input_list)).cuda(),\
         torch.FloatTensor(review_pos_embedding).cuda(),\
         torch.FloatTensor(review_neg_embedding).cuda()
+
+class TrainData2():
+    def __init__(self, train_data, review_embedding_dict):
+        self.train_data = train_data
+        self.length = len(train_data.keys())
+        self.review_embedding_dict = review_embedding_dict
+
+    def get_batch(self, batch_idx_list):
+        user_list, item_list, rating_list, review_input_list = [], [], [], []
+        neg_review = []
+        for idx in batch_idx_list:
+            user_list.append(self.train_data[idx][0])
+            item_list.append(self.train_data[idx][1])
+            rating_list.append(self.train_data[idx][2])
+            review_input_list.append(self.train_data[idx][3])
+        
+            for _ in range(conf.num_negative_reviews):
+                j = np.random.randint(self.length-1)
+                while j == idx:
+                    j = np.random.randint(self.length-1)
+                neg_review.append(self.train_data[j][3])
+
+        return torch.LongTensor(user_list).cuda(), \
+        torch.LongTensor(item_list).cuda(), \
+        torch.FloatTensor(rating_list).cuda(), \
+        torch.LongTensor(np.array(review_input_list)).cuda(),\
+        torch.LongTensor(np.array(neg_review)).cuda()

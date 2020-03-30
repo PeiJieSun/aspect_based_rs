@@ -18,7 +18,7 @@ class abae(nn.Module):
         super(abae, self).__init__()
 
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension) 
-        self.word_embedding.weight.requires_grad = False
+        #self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
@@ -27,7 +27,16 @@ class abae(nn.Module):
     # w: (batch_size, sequence_length)
     # y_s: (batch_size, word_dimension)
     # z_n: (batch_size * num_negative_reviews, word_dimension)
-    def forward(self, w, y_s, z_n):
+    def forward(self, w, negative_review):
+        #positive_review: (batch_size, sequence_length)
+        #negative_review: (batch_size*num_negative_reviews, sequence_length)
+
+        positive_review_embed = self.word_embedding(w) # (batch_size, sequence_length, word_dimension)
+        negative_review_embed = self.word_embedding(negative_review) # (batch_size*num_negative_reviews, sequence_length, word_dimension)
+
+        y_s = torch.mean(positive_review_embed, 1).view(-1, conf.word_dimension) # (batch_size, word_dimension)
+        z_n = torch.mean(negative_review_embed, 1).view(-1, conf.word_dimension) # (batch_size * num_negative_reviews, word_dimension)
+
         e_w = self.word_embedding(w) # (batch_size, sequence_length, word_dimension)
         y_s = y_s.view(y_s.shape[0], y_s.shape[1], 1) # (batch_size, word_dimension, 1)
         
