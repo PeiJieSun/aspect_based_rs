@@ -16,6 +16,9 @@ class aspect_rating_1(nn.Module):
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
 
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.common_dimension)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.common_dimension)
+
         # parameters for FM
         self.user_embedding = nn.Embedding(conf.num_users, conf.common_dimension)  # user/item num * 32
         self.item_embedding = nn.Embedding(conf.num_items, conf.common_dimension)
@@ -37,8 +40,8 @@ class aspect_rating_1(nn.Module):
         self.reset_para()
 
     def reset_para(self):
-        nn.init.uniform_(self.user_embedding.weight, a=-0.1, b=0.1)
-        nn.init.uniform_(self.item_embedding.weight, a=-0.1, b=0.1)
+        nn.init.uniform_(self.free_user_embedding.weight, a=-0.1, b=0.1)
+        nn.init.uniform_(self.free_item_embedding.weight, a=-0.1, b=0.1)
 
         nn.init.uniform_(self.fc.weight, -0.05, 0.05)
         nn.init.constant_(self.fc.bias, 0.0)
@@ -117,8 +120,11 @@ class aspect_rating_1(nn.Module):
         u_out = user_aspect_embed #u_fea.view(-1, 1, conf.common_dimension)
         i_out = item_aspect_embed #i_fea.view(-1, 1, conf.common_dimension)
 
-        u_out = u_out.reshape(u_out.size(0), -1)
-        i_out = i_out.reshape(i_out.size(0), -1)
+        free_user_embed = self.free_user_embedding(user)
+        free_item_embed = self.free_item_embedding(item)
+
+        u_out = u_out.reshape(u_out.size(0), -1) + free_user_embed
+        i_out = i_out.reshape(i_out.size(0), -1) + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -149,8 +155,11 @@ class aspect_rating_1(nn.Module):
         u_out = u_fea.view(-1, 1, conf.common_dimension)
         i_out = i_fea.view(-1, 1, conf.common_dimension)
 
-        u_out = u_out.reshape(u_out.size(0), -1)
-        i_out = i_out.reshape(i_out.size(0), -1)
+        free_user_embed = self.free_user_embedding(user)
+        free_item_embed = self.free_item_embedding(item)
+
+        u_out = u_out.reshape(u_out.size(0), -1) + free_user_embed
+        i_out = i_out.reshape(i_out.size(0), -1) + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
