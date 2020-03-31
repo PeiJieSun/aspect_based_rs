@@ -145,7 +145,7 @@ class aspect_rating_1(nn.Module):
         mse_loss = self.mse_func_2(prediction, label)
 
         # collect the loss of abae and rating prediction
-        obj_loss = mse_loss + 0.01*J_loss + 0.01*U_loss
+        obj_loss = mse_loss + 0.001*J_loss + 0.001*U_loss
         
         return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
