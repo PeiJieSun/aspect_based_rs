@@ -33,6 +33,8 @@ class aspect_rating_1(nn.Module):
         self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
         self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
 
+        self.dropout = nn.Dropout(conf.drop_out)
+
         self.mse_func_1 = nn.MSELoss(reduction='none')
         self.mse_func_2 = nn.MSELoss()
         self.margin_ranking_loss = nn.MarginRankingLoss(margin=1.0, reduction='none')
@@ -123,8 +125,8 @@ class aspect_rating_1(nn.Module):
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = u_out.reshape(u_out.size(0), -1) + free_user_embed
-        i_out = i_out.reshape(i_out.size(0), -1) + free_item_embed
+        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) + free_user_embed
+        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -158,8 +160,8 @@ class aspect_rating_1(nn.Module):
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = u_out.reshape(u_out.size(0), -1) + free_user_embed
-        i_out = i_out.reshape(i_out.size(0), -1) + free_item_embed
+        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) + free_user_embed
+        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 

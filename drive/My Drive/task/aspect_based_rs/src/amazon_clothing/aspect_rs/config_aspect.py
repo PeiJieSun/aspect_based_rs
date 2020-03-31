@@ -14,9 +14,11 @@ lr_rating = 1.0
 
 learning_rate = 2e-3
 
+drop_out = 0.5
+
 vocab_sz = 15350 + 3
 batch_size = 128
-train_epochs = 20
+train_epochs = 30
 weight_decay = 1e-3
 
 u_max_r = 7

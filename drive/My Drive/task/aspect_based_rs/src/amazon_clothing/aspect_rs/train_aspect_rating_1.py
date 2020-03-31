@@ -5,7 +5,7 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
@@ -13,6 +13,9 @@ import DataModule_aspect as data_utils
 import config_aspect as conf
 
 from Logging import Logging
+
+def now():
+    return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
     import os
@@ -52,14 +55,15 @@ if __name__ == '__main__':
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
+
     #import adabound
     #optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_17.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_17.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_18.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_18.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
@@ -99,6 +103,8 @@ if __name__ == '__main__':
 
         t1 = time()
         
+        scheduler.step(epoch)
+
         # Update user_embedding & item_embedding with generated aspect-based user&item embedding
         model.user_embedding.weight = nn.Parameter(torch.FloatTensor(user_aspect_embedding).cuda())
         model.item_embedding.weight = nn.Parameter(torch.FloatTensor(item_aspect_embedding).cuda())
@@ -125,6 +131,7 @@ if __name__ == '__main__':
         if np.sqrt(np.mean(val_rating_loss)) < min_rating_loss:
             torch.save(model.state_dict(), train_model_path)
             print('save model')
+            best_epoch = epoch
         min_rating_loss = min(np.sqrt(np.mean(val_rating_loss)), min_rating_loss)
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
@@ -140,3 +147,7 @@ if __name__ == '__main__':
             (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
+    
+    print("----"*20)
+    print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    print("----"*20)
