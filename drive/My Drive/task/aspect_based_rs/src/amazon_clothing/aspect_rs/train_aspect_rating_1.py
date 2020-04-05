@@ -39,8 +39,8 @@ if __name__ == '__main__':
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
     
-    
     model_params = model.state_dict()
+    
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -50,6 +50,12 @@ if __name__ == '__main__':
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
     
+    '''
+    fm_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_fm_id_2.mod')
+    for param in fm_params:
+        model_params[param] = fm_params[param]
+    '''
+
     model.load_state_dict(model_params)
     
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_19.mod'))
@@ -63,8 +69,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_27.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_27.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_28.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_28.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
@@ -72,8 +78,8 @@ if __name__ == '__main__':
     test_dataset = data_utils.ValData(test_data)
 
     train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    val_batch_sampler = data.BatchSampler(data.SequentialSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    test_batch_sampler = data.BatchSampler(data.SequentialSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     user_aspect_embedding = np.random.rand(conf.num_users, conf.common_dimension)
     item_aspect_embedding = np.random.rand(conf.num_items, conf.common_dimension)
@@ -86,6 +92,7 @@ if __name__ == '__main__':
 
         total_user, total_label = [], []
         train_rating_loss, train_abae_loss, train_prediction = [], [], []
+        
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list, review_input_list, \
                 neg_review, user_histor_index, user_histor_value, \
@@ -105,16 +112,14 @@ if __name__ == '__main__':
                 user_aspect_embedding[user] = tensorToScalar(user_aspect_embed[idx])
             for idx, item in enumerate(item_list):
                 item_aspect_embedding[item] = tensorToScalar(item_aspect_embed[idx])
-
         t1 = time()
-
         
         scheduler.step(epoch)
 
         # Update user_embedding & item_embedding with generated aspect-based user&item embedding
         model.user_embedding.weight = nn.Parameter(torch.FloatTensor(user_aspect_embedding).cuda())
         model.item_embedding.weight = nn.Parameter(torch.FloatTensor(item_aspect_embedding).cuda())
-
+        
         #import pdb; pdb.set_trace()
 
         # evaluate the performance of the model with following code
@@ -129,7 +134,6 @@ if __name__ == '__main__':
             val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend(tensorToScalar(rating_loss))
         t2 = time()
 
-
         total_user, total_item, total_label = [], [], []
         test_rating_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
@@ -140,6 +144,8 @@ if __name__ == '__main__':
             #import pdb; pdb.set_trace()
         t3 = time()
         
+        #print(np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss)))
+        
         if epoch == 1:
             min_rating_loss = np.sqrt(np.mean(val_rating_loss))
         if np.sqrt(np.mean(val_rating_loss)) < min_rating_loss:
@@ -147,7 +153,7 @@ if __name__ == '__main__':
             print('save model')
             best_epoch = epoch
         min_rating_loss = min(np.sqrt(np.mean(val_rating_loss)), min_rating_loss)
-
+        
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE: Train loss:{:.4f}'.format(np.mean(train_abae_loss)))
         log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(

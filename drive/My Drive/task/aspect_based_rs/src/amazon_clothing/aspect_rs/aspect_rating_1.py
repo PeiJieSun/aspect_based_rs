@@ -125,8 +125,8 @@ class aspect_rating_1(nn.Module):
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) + free_user_embed
-        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) + free_item_embed
+        u_out = self.dropout(u_out.reshape(u_out.size(0), -1))# + free_user_embed
+        i_out = self.dropout(i_out.reshape(i_out.size(0), -1))# + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -160,8 +160,8 @@ class aspect_rating_1(nn.Module):
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) + free_user_embed
-        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) + free_item_embed
+        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) #+ free_user_embed
+        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) #+ free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -172,7 +172,7 @@ class aspect_rating_1(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdims=True) + fm_linear_part #+ self.b_users[user] + self.b_items[item] # + conf.avg_rating
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdims=True) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
 
         prediction = fm_output.squeeze(1)
         rating_loss = self.mse_func_1(prediction, label)
