@@ -17,7 +17,7 @@ learning_rate = 2e-3
 drop_out = 0.5
 
 vocab_sz = 15350 + 3
-batch_size = 128
+batch_size = 256
 train_epochs = 30
 weight_decay = 1e-3
 
