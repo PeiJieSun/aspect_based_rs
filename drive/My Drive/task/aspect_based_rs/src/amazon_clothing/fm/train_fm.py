@@ -40,9 +40,9 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_pmf_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_pmf_id_x---.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_pmf_id_x---.mod' % (conf.out_path, conf.data_name)
+    check_dir('%s/train_%s_fm_id_x.log' % (conf.out_path, conf.data_name))
+    log = Logging('%s/train_%s_fm_id_x---.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_fm_id_x---.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
