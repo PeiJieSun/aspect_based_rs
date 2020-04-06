@@ -41,6 +41,12 @@ class generation(nn.Module):
 
         self.dropout = nn.Dropout(conf.drop_out)
 
+        '''
+            DEBUG
+        '''
+        self.user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)  # user/item num * 32
+        self.item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
+
         # LOSS FUNCTIONS
         self.mse_loss = nn.MSELoss()
         self.mse_loss_2 = nn.MSELoss(reduction='none')
@@ -186,18 +192,26 @@ class generation(nn.Module):
         return aspect_user_embed, aspect_item_embed, prediction, mse_loss, J_loss, generation_loss, obj_loss
 
     def predict(self, user, item, label):
+        '''
         u_fea = self.aspect_user_embedding(user)
         i_fea = self.aspect_item_embedding(item)
 
         #import pdb; pdb.set_trace()
         u_out = u_fea.view(-1, 1, conf.common_dimension)
         i_out = i_fea.view(-1, 1, conf.common_dimension)
+        '''
+
+        u_fea = self.user_embedding(user)
+        i_fea = self.item_embedding(item)
+
+        u_out = u_fea.view(-1, 1, conf.embedding_dim)
+        i_out = i_fea.view(-1, 1, conf.embedding_dim)
 
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) + free_user_embed
-        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) + free_item_embed
+        u_out = self.dropout(u_out.reshape(u_out.size(0), -1)) #+ free_user_embed
+        i_out = self.dropout(i_out.reshape(i_out.size(0), -1)) #+ free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -207,7 +221,7 @@ class generation(nn.Module):
         fm_interactions_1 = torch.pow(fm_interactions_1, 2)
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2), torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdims=True) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdims=True) + fm_linear_part #+ self.b_users[user] + self.b_items[item] # + conf.avg_rating
 
         prediction = fm_output.squeeze(1)
         mse_loss = self.mse_loss(prediction, label)

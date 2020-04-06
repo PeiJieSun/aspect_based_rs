@@ -1,7 +1,7 @@
 word_dimension = 200
 aspect_dimension = 20
 
-common_dimension = word_dimension
+common_dimension = 32
 
 drop_out = 0.5
 weight_decay = 1e-3
@@ -31,3 +31,5 @@ target_path = '%s/data/%s' % (root_path, data_name)
 out_path = '%s/out/%s' % (root_path, data_name)
 origin_file = '/content/drive/My Drive/datasets/amazon_clothing/reviews_Clothing_Shoes_and_Jewelry_5.json.gz'
 model_path = '%s/out/model' % root_path
+
+embedding_dim = 32

@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # load word embedding from pretrained word2vec model
     model_params = model.state_dict()
-
+    '''
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
-
+    '''
     '''
     aspect_rating_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_19.mod')
     for param in aspect_rating_params:
@@ -52,6 +52,10 @@ if __name__ == '__main__':
     model.load_state_dict(model_params)
     '''
 
+    fm_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_fm_id_2.mod')
+    for param in fm_params:
+        model_params[param] = fm_params[param]
+        print(param)
     model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -88,7 +92,7 @@ if __name__ == '__main__':
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
         model.train()
-
+        '''
         total_user, total_label = [], []
         train_rating_loss, train_abae_loss, train_generation_loss, train_prediction = [], [], [], []
         for batch_idx_list in train_batch_sampler:
@@ -124,6 +128,7 @@ if __name__ == '__main__':
 
         model.aspect_user_embedding.weight = nn.Parameter(torch.FloatTensor(aspect_user_embedding).cuda())
         model.aspect_item_embedding.weight = nn.Parameter(torch.FloatTensor(aspect_item_embedding).cuda())
+        '''
 
         # evaluate the performance of the model with following xxx 
         model.eval()
@@ -149,9 +154,10 @@ if __name__ == '__main__':
             #import pdb; pdb.set_trace()
         t3 = time()
 
-        train_rating_loss, val_rating_loss, test_rating_loss = \
-            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
+        val_rating_loss, test_rating_loss = np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
         
+        print(val_rating_loss, test_rating_loss)
+        import sys; sys.exit(0)
         
         if epoch == 1:
             min_rating_loss = val_rating_loss

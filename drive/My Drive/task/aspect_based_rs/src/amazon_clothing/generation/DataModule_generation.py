@@ -65,7 +65,7 @@ class TrainData():
         self.user_historical_review_dict = user_historical_review_dict
         self.item_historical_review_dict = item_historical_review_dict
 
-        self.construct_aspect_voab()
+        #self.construct_aspect_voab()
 
     def get_batch(self, batch_idx_list):
         old_user_histor_idx, old_item_histor_idx = OrderedDict(), OrderedDict()
