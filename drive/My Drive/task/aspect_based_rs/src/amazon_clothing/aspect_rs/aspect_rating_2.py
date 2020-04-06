@@ -200,7 +200,7 @@ class aspect_rating_1(nn.Module):
         mse_loss = self.mse_func_2(prediction, label)
 
         # collect the loss of abae and rating prediction
-        obj_loss = mse_loss + 0.01*u_J_loss + 0.01*u_U_loss + 0.001*i_J_loss + 0.001*i_U_loss
+        obj_loss = mse_loss + 0.01*u_J_loss + 0.01*u_U_loss + 0.01*i_J_loss + 0.01*i_U_loss
         #import pdb; pdb.set_trace()
         return obj_loss, rating_loss, u_abae_out_loss, i_abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
