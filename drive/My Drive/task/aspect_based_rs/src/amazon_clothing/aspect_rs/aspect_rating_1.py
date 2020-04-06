@@ -130,8 +130,8 @@ class aspect_rating_1(nn.Module):
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = self.dropout(u_out)# + free_user_embed
-        i_out = self.dropout(i_out)# + free_item_embed
+        #u_out = self.dropout(u_out)# + free_user_embed
+        #i_out = self.dropout(i_out)# + free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -157,14 +157,14 @@ class aspect_rating_1(nn.Module):
         return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
     def predict(self, user, item, label):
-        u_fea = self.user_embedding(user)
-        i_fea = self.item_embedding(item)
+        u_out = self.user_embedding(user)
+        i_out = self.item_embedding(item)
 
         free_user_embed = self.free_user_embedding(user)
         free_item_embed = self.free_item_embedding(item)
 
-        u_out = self.dropout(u_fea) #+ free_user_embed
-        i_out = self.dropout(i_fea) #+ free_item_embed
+        #u_out = self.dropout(u_fea) #+ free_user_embed
+        #i_out = self.dropout(i_fea) #+ free_item_embed
 
         input_vec = torch.cat([u_out, i_out], 1)
 
