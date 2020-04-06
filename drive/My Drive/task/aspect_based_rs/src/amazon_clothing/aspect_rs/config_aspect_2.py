@@ -22,7 +22,7 @@ train_epochs = 30
 weight_decay = 1e-3
 
 u_max_r = 7
-i_max_r = 14
+i_max_r = 7
 
 
 
