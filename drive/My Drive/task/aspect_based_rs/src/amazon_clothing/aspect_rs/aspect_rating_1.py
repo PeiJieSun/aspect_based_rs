@@ -16,7 +16,6 @@ class aspect_rating_1(nn.Module):
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
 
-
         self.user_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
 
         self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
@@ -111,13 +110,6 @@ class aspect_rating_1(nn.Module):
         item_histor_tensor = \
             torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
 
-        '''
-        user_histor_tensor = torch.sparse.FloatTensor(user_histor_index, user_histor_value, \
-            torch.Size([label.shape[0], w.shape[0]])).to_dense() # (batch_size, num_review)
-        item_histor_tensor = torch.sparse.FloatTensor(item_histor_index, item_histor_value, \
-            torch.Size([label.shape[0], w.shape[0]])).to_dense() # (batch_size, num_review)
-        '''
-
         # predict the ratings of user-item pairs
         user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
         item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
@@ -125,13 +117,8 @@ class aspect_rating_1(nn.Module):
         user_aspect_embed = self.user_fc_linear(user_aspect_embed)
         item_aspect_embed = self.user_fc_linear(item_aspect_embed)
 
-        u_out, i_out = user_aspect_embed, item_aspect_embed
-
-        free_user_embed = self.free_user_embedding(user)
-        free_item_embed = self.free_item_embedding(item)
-
-        #u_out = self.dropout(u_out)# + free_user_embed
-        #i_out = self.dropout(i_out)# + free_item_embed
+        u_out = self.dropout(user_aspect_embed)
+        i_out = self.dropout(item_aspect_embed)
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -152,19 +139,13 @@ class aspect_rating_1(nn.Module):
         mse_loss = self.mse_func_2(prediction, label)
 
         # collect the loss of abae and rating prediction
-        obj_loss = mse_loss #+ 0.001*J_loss + 0.001*U_loss
+        obj_loss = mse_loss + 0.001*J_loss + 0.001*U_loss
         
         return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
     
-    def predict(self, user, item, label):
-        u_out = self.user_embedding(user)
-        i_out = self.item_embedding(item)
-
-        free_user_embed = self.free_user_embedding(user)
-        free_item_embed = self.free_item_embedding(item)
-
-        #u_out = self.dropout(u_fea) #+ free_user_embed
-        #i_out = self.dropout(i_fea) #+ free_item_embed
+    def predict(self, user, item, labels):
+        u_out = self.dropout(self.user_embedding(user))
+        i_out = self.dropout(self.item_embedding(item))
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -175,11 +156,9 @@ class aspect_rating_1(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdims=True) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) + fm_linear_part + self.b_users[uids] + self.b_items[iids] #+ conf.avg_rating
 
         prediction = fm_output.squeeze(1)
-        rating_loss = self.mse_func_1(prediction, label)
-        mse_loss = self.mse_func_2(prediction, label)
-
+        mse_loss = self.mse_func_1(prediction, labels)
         #import pdb; pdb.set_trace()
-        return prediction, rating_loss 
+        return prediction, mse_loss 

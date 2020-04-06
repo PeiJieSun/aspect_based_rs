@@ -49,15 +49,10 @@ if __name__ == '__main__':
     
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
-    
-    '''
-    fm_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_fm_id_2.mod')
-    for param in fm_params:
-        model_params[param] = fm_params[param]
-    '''
 
     model.load_state_dict(model_params)
-    
+    #import pdb; pdb.set_trace()
+
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_adabound_19.mod'))
 
     model.cuda()
@@ -66,8 +61,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_34.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_34.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_36.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_36.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
@@ -88,7 +83,6 @@ if __name__ == '__main__':
         model.train()
 
         train_rating_loss, train_abae_loss, train_prediction = [], [], []
-        
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list, review_input_list, \
                 neg_review, user_histor_index, user_histor_value, \
@@ -97,7 +91,6 @@ if __name__ == '__main__':
             obj, rating_loss, abae_loss, prediction, user_aspect_embed, item_aspect_embed = \
                 model(review_input_list, neg_review, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
-            #import pdb; pdb.set_trace()
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_abae_loss.extend(tensorToScalar(abae_loss))
             train_prediction.extend(tensorToScalar(prediction))
             model.zero_grad(); obj.backward(); optimizer.step()
@@ -116,7 +109,7 @@ if __name__ == '__main__':
         
         # evaluate the performance of the model with following code
         model.eval()
-        
+
         val_rating_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
             user_list, item_list, rating_list = val_dataset.get_batch(batch_idx_list)
@@ -129,9 +122,8 @@ if __name__ == '__main__':
             user_list, item_list, rating_list = test_dataset.get_batch(batch_idx_list)
             prediction, rating_loss = model.predict(user_list, item_list, rating_list)
             test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend(tensorToScalar(rating_loss))
-            #import pdb; pdb.set_trace()
         t3 = time()
-                
+
         if epoch == 1:
             min_rating_loss = np.sqrt(np.mean(val_rating_loss))
         if np.sqrt(np.mean(val_rating_loss)) < min_rating_loss:
@@ -153,8 +145,6 @@ if __name__ == '__main__':
             (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
-
-        #import sys; sys.exit(0)
 
     print("----"*20)
     print(f"{now()} {conf.data_name}best epoch: {best_epoch}")

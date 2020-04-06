@@ -35,6 +35,8 @@ if __name__ == '__main__':
     from fm import fm
     model = fm()
 
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_fm_id_2.mod'))
+
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
@@ -66,7 +68,7 @@ if __name__ == '__main__':
             #import pdb; pdb.set_trace()
             train_loss.extend(tensorToScalar(mse_loss))
             train_prediction.extend(tensorToScalar(prediction))
-            model.zero_grad(); obj_loss.backward(); optimizer.step()
+            #model.zero_grad(); obj_loss.backward(); optimizer.step()
         t1 = time()
 
         #import pdb; pdb.set_trace()
@@ -108,4 +110,5 @@ if __name__ == '__main__':
             (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
-        #import pdb; pdb.set_trace()
+        
+        import sys; sys.exit(0)

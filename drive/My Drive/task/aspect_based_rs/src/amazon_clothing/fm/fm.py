@@ -38,13 +38,8 @@ class fm(nn.Module):
         i_fea = self.item_embedding(iids)
 
         #import pdb; pdb.set_trace()
-        u_out = u_fea.view(-1, 1, conf.embedding_dim)
-        i_out = i_fea.view(-1, 1, conf.embedding_dim)
 
-        u_out = u_out.reshape(u_out.size(0), -1)
-        i_out = i_out.reshape(i_out.size(0), -1)
-
-        input_vec = torch.cat([u_out, i_out], 1)
+        input_vec = torch.cat([u_fea, i_fea], 1)
 
         fm_linear_part = self.fc(input_vec)
 
