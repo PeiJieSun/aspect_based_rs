@@ -10,7 +10,7 @@ class aspect_rating_1(nn.Module):
 
         # parameters for aspect extraction
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension) 
-        #self.word_embedding.weight.requires_grad = False
+        self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension

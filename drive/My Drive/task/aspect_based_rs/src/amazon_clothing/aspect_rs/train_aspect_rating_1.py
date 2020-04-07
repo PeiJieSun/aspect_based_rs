@@ -61,8 +61,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_38.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_38.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_39.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_39.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
@@ -146,6 +146,6 @@ if __name__ == '__main__':
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
 
-    print("----"*20)
-    print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
-    print("----"*20)
+    log.record("----"*20)
+    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record("----"*20)
