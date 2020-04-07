@@ -10,7 +10,7 @@ class aspect_rating_1(nn.Module):
 
         # parameters for aspect extraction
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension) 
-        self.word_embedding.weight.requires_grad = False
+        #self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
@@ -111,8 +111,8 @@ class aspect_rating_1(nn.Module):
             torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
 
         # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, z_s) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, z_s) # (batch_size, mf_dimension)
+        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
+        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
         
         user_aspect_embed = self.user_fc_linear(user_aspect_embed)
         item_aspect_embed = self.user_fc_linear(item_aspect_embed)
