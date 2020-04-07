@@ -10,7 +10,7 @@ class aspect_rating_1(nn.Module):
 
         # parameters for aspect extraction
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension) 
-        #self.word_embedding.weight.requires_grad = False
+        self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
@@ -20,12 +20,6 @@ class aspect_rating_1(nn.Module):
 
         self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
         self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
-
-        # parameters for FM
-        self.user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)  # user/item num * 32
-        self.item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
-        self.user_embedding.weight.requires_grad = False
-        self.item_embedding.weight.requires_grad = False
 
         dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
@@ -121,8 +115,8 @@ class aspect_rating_1(nn.Module):
         i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
 
         input_vec = torch.cat([u_out, i_out], 1)
-
-        #import pdb; pdb.set_trace()
+        
+        input_vec = self.dropout(input_vec)
 
         fm_linear_part = self.fc(input_vec)
 
@@ -141,24 +135,4 @@ class aspect_rating_1(nn.Module):
         # collect the loss of abae and rating prediction
         obj_loss = mse_loss + 0.001*J_loss + 0.001*U_loss
         
-        return obj_loss, rating_loss, abae_out_loss, prediction, user_aspect_embed, item_aspect_embed
-    
-    def predict(self, user, item, labels):
-        u_out = self.dropout(self.user_embedding(user)) #+ self.free_user_embedding(user)
-        i_out = self.dropout(self.item_embedding(item)) #+ self.free_item_embedding(item)
-
-        input_vec = torch.cat([u_out, i_out], 1)
-
-        fm_linear_part = self.fc(input_vec)
-
-        fm_interactions_1 = torch.mm(input_vec, self.fm_V)
-        fm_interactions_1 = torch.pow(fm_interactions_1, 2)
-
-        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
-                                     torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) + fm_linear_part + self.b_users[user] + self.b_items[item] #+ conf.avg_rating
-
-        prediction = fm_output.squeeze(1)
-        mse_loss = self.mse_func_1(prediction, labels)
-        #import pdb; pdb.set_trace()
-        return prediction, mse_loss 
+        return obj_loss, rating_loss, abae_out_loss, prediction

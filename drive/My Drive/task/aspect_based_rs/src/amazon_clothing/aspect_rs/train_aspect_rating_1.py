@@ -27,14 +27,6 @@ def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
 if __name__ == '__main__':
-    ############################## PREPARE DATASET ##############################
-    print('System start to load data...')
-    t0 = time()
-    train_data, val_data, test_data, \
-        train_user_historical_review_dict, train_item_historical_review_dict = data_utils.load_all()
-    t1 = time()
-    print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
-    
     ############################## CREATE MODEL ##############################
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
@@ -58,23 +50,30 @@ if __name__ == '__main__':
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
+    
+    ############################## PREPARE DATASET ##############################
+    print('System start to load data...')
+    t0 = time()
+    train_data, val_data, test_data, \
+        train_user_historical_review_dict, train_item_historical_review_dict = data_utils.load_all()
+    t1 = time()
+    print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
+    
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_adabound_40.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_adabound_40.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_41.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_41.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
-    train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict)
-    val_dataset = data_utils.ValData(val_data)
-    test_dataset = data_utils.ValData(test_data)
+    train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict, train_data)
+    val_dataset = data_utils.TrainData(val_data, train_user_historical_review_dict, train_item_historical_review_dict, train_data)
+    test_dataset = data_utils.TrainData(test_data, train_user_historical_review_dict, train_item_historical_review_dict, train_data)
 
     train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
     val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
     test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
-    user_aspect_embedding = np.random.rand(conf.num_users, conf.embedding_dim)
-    item_aspect_embedding = np.random.rand(conf.num_items, conf.embedding_dim)
 
     # Start Training !!!
     min_rating_loss = 0
@@ -82,69 +81,63 @@ if __name__ == '__main__':
         t0 = time()
         model.train()
 
-        train_rating_loss, train_abae_loss, train_prediction = [], [], []
+        train_rating_loss, train_prediction = [], []
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list, review_input_list, \
                 neg_review, user_histor_index, user_histor_value, \
                 item_histor_index, item_histor_value = train_dataset.get_batch(batch_idx_list)
 
-            obj, rating_loss, abae_loss, prediction, user_aspect_embed, item_aspect_embed = \
-                model(review_input_list, neg_review, \
+            obj, rating_loss, abae_loss, prediction = model(review_input_list, neg_review, \
                 user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
-            train_rating_loss.extend(tensorToScalar(rating_loss)); train_abae_loss.extend(tensorToScalar(abae_loss))
-            train_prediction.extend(tensorToScalar(prediction))
+            train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             model.zero_grad(); obj.backward(); optimizer.step()
 
-            for idx, user in enumerate(user_list):
-                user_aspect_embedding[user] = tensorToScalar(user_aspect_embed[idx])
-            for idx, item in enumerate(item_list):
-                item_aspect_embedding[item] = tensorToScalar(item_aspect_embed[idx])
         t1 = time()
         
         scheduler.step(epoch)
-
-        # Update user_embedding & item_embedding with generated aspect-based user&item embedding
-        model.user_embedding.weight = nn.Parameter(torch.FloatTensor(user_aspect_embedding).cuda())
-        model.item_embedding.weight = nn.Parameter(torch.FloatTensor(item_aspect_embedding).cuda())
         
         # evaluate the performance of the model with following code
         model.eval()
 
         val_rating_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
-            user_list, item_list, rating_list = val_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss = model.predict(user_list, item_list, rating_list)
+            user_list, item_list, rating_list, review_input_list, \
+                neg_review, user_histor_index, user_histor_value, \
+                item_histor_index, item_histor_value = val_dataset.get_batch(batch_idx_list)
+
+            obj, rating_loss, abae_loss, prediction = model(review_input_list, neg_review, \
+                user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend(tensorToScalar(rating_loss))
         t2 = time()
 
         test_rating_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
-            user_list, item_list, rating_list = test_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss = model.predict(user_list, item_list, rating_list)
+            user_list, item_list, rating_list, review_input_list, \
+                neg_review, user_histor_index, user_histor_value, \
+                item_histor_index, item_histor_value = test_dataset.get_batch(batch_idx_list)
+
+            obj, rating_loss, abae_loss, prediction = model(review_input_list, neg_review, \
+                user_list, item_list, rating_list, user_histor_index, user_histor_value, item_histor_index, item_histor_value)
             test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend(tensorToScalar(rating_loss))
         t3 = time()
 
+        train_rmse, val_rmse, test_rmse = np.sqrt(np.mean(train_rating_loss)), \
+            np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
+
         if epoch == 1:
-            min_rating_loss = np.sqrt(np.mean(val_rating_loss))
-        if np.sqrt(np.mean(val_rating_loss)) < min_rating_loss:
+            min_rating_loss = val_rmse
+        if val_rmse < min_rating_loss:
             torch.save(model.state_dict(), train_model_path)
-            print('save model')
+            log.record('-----------save model------------')
             best_epoch = epoch
-        min_rating_loss = min(np.sqrt(np.mean(val_rating_loss)), min_rating_loss)
+        min_rating_loss = min(val_rmse, min_rating_loss)
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
-        log.record('ABAE: Train loss:{:.4f}'.format(np.mean(train_abae_loss)))
-        log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(
-            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))))
+        log.record('Rating RMSE: Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_rmse, val_rmse, test_rmse))
 
         log.record('Train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
         log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
         log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
-
-        log.record('user embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
-        log.record('item embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
 
     log.record("----"*20)
     log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
