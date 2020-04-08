@@ -16,12 +16,12 @@ class aspect_rating_1(nn.Module):
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
 
-        self.user_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
+        self.user_fc_linear = nn.Linear(2*conf.aspect_dimension, conf.embedding_dim)
 
         self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
         self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
 
-        dim = conf.embedding_dim * 2
+        dim = conf.embedding_dim
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
@@ -111,14 +111,16 @@ class aspect_rating_1(nn.Module):
         #user_aspect_embed = self.user_fc_linear(user_aspect_embed)
         #item_aspect_embed = self.user_fc_linear(item_aspect_embed)
 
-        input_vec = torch.matmul(user_aspect_embed * item_aspect_embed, torch.transpose(self.transform_T.weight, 0, 1))
         #import pdb; pdb.set_trace()
 
-        input_vec = self.user_fc_linear(input_vec)
         #u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
         #i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
 
         #input_vec = torch.cat([u_out, i_out], 1)
+
+        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1)
+
+        input_vec = self.user_fc_linear(input_vec)
         
         input_vec = self.dropout(input_vec)
 
