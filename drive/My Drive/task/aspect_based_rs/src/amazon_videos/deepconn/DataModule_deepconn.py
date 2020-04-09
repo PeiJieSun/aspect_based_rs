@@ -28,9 +28,9 @@ def load_all():
 
     train_data = {}
     f = open(train_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
 
@@ -55,16 +55,16 @@ def load_all():
 
     val_data = {}
     f = open(val_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating = line['idx'], line['user'], line['item'], line['rating']
+        user, item, rating = line['user'], line['item'], line['rating']
         val_data[idx] = [user, item, rating]
     
     test_data = {}
     f = open(test_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating = line['idx'], line['user'], line['item'], line['rating']
+        user, item, rating = line['user'], line['item'], line['rating']
         test_data[idx] = [user, item, rating]
     
     #import pdb; pdb.set_trace()

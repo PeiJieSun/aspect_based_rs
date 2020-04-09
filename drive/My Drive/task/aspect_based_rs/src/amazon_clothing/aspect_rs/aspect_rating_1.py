@@ -112,7 +112,7 @@ class aspect_rating_1(nn.Module):
         #item_aspect_embed = self.user_fc_linear(item_aspect_embed)
 
         input_vec = torch.matmul(user_aspect_embed * item_aspect_embed, torch.transpose(self.transform_T.weight, 0, 1))
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
 
         input_vec = self.user_fc_linear(input_vec)
         #u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
