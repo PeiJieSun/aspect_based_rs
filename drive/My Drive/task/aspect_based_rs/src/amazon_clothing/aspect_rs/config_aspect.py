@@ -1,5 +1,5 @@
 word_dimension = 200
-aspect_dimension = 32
+aspect_dimension = 64
 
 common_dimension = word_dimension
 
