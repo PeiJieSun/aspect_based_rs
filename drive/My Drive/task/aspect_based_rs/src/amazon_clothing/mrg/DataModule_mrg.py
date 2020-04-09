@@ -3,10 +3,9 @@ import torch.nn.functional as F
 
 import numpy as np 
 from collections import defaultdict
-from collections import OrderedDict
 
 import torch.utils.data as data
-import config_generation as conf
+import config_mrg as conf
 
 from copy import deepcopy
 
@@ -64,8 +63,8 @@ class TrainData():
             item_list.append(self.train_data[data_idx][1])
             rating_list.append(self.train_data[data_idx][2])
 
-            review_input_list.append(self.train_data[data_idx][4])
-            review_output_list.append(self.train_data[data_idx][5])
+            review_input_list.append(self.train_data[data_idx][3])
+            review_output_list.append(self.train_data[data_idx][4])
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \

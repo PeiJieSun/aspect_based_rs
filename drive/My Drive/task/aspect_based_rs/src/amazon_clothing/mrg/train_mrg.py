@@ -5,12 +5,12 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_generation as data_utils
-import config_generation as conf
+import DataModule_mrg as data_utils
+import config_mrg as conf
 
 from Logging import Logging
 
@@ -50,8 +50,8 @@ if __name__ == '__main__':
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
-    val_dataset = data_utils.ValData(val_data)
-    test_dataset = data_utils.ValData(test_data)
+    val_dataset = data_utils.TrainData(val_data)
+    test_dataset = data_utils.TrainData(test_data)
 
     train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
     val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
@@ -67,9 +67,9 @@ if __name__ == '__main__':
         for batch_idx_list in train_batch_sampler:
             user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
             
-            prediction, mse_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
+            prediction, rating_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
 
-            train_rating_loss.extend([mse_loss.item()]*len(batch_idx_list))
+            train_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
             train_generation_loss.extend([generation_loss.item()]*len(batch_idx_list))
             train_prediction.extend(tensorToScalar(prediction))
             
@@ -83,16 +83,16 @@ if __name__ == '__main__':
         
         val_rating_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
-            user, item, label = val_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss = model.predict(user, item, label)
-            val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend(tensorToScalar(rating_loss))
+            user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
+            prediction, rating_loss, _, _ = model(user, item, label, review_input, review_output)
+            val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
         t2 = time()
 
         test_rating_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
-            user, item, label = test_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss = model.predict(user, item, label)
-            test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend(tensorToScalar(rating_loss))
+            user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
+            prediction, rating_loss, _, _ = model(user, item, label, review_input, review_output)
+            test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
         t3 = time()
 
         train_rating_loss, val_rating_loss, test_rating_loss =\
