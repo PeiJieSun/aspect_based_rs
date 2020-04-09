@@ -30,6 +30,9 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from deepconn import deepconn
     model = deepconn()
+
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_tools_aspect_deepconn_id_01.mod'))
+
     model.cuda()
     
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -69,7 +72,7 @@ if __name__ == '__main__':
             obj, rating_loss, prediction = model(user_list, item_list, rating_list, user_doc, item_doc)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             
-            model.zero_grad(); obj.backward(); optimizer.step()
+            #model.zero_grad(); obj.backward(); optimizer.step()
         t1 = time()
         
         scheduler.step(epoch)

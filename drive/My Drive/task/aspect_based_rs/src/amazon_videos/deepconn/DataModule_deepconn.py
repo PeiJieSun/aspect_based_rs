@@ -25,6 +25,7 @@ def generate_review(review):
 def load_all():
     user_doc_dict, item_doc_dict = defaultdict(list), defaultdict(list)
     user_review_dict, item_review_dict = defaultdict(list), defaultdict(list)
+    train_rating_list, val_rating_list, test_rating_list = [], [], []
 
     train_data = {}
     f = open(train_data_path)
@@ -33,6 +34,8 @@ def load_all():
         user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
+
+        train_rating_list.append(rating)
 
         if len(user_review_dict[user]) < conf.u_max_r:
             user_doc_dict[user].extend(review)
@@ -59,14 +62,24 @@ def load_all():
         line = eval(line)
         user, item, rating = line['user'], line['item'], line['rating']
         val_data[idx] = [user, item, rating]
-    
+
+        val_rating_list.append(rating)
+
     test_data = {}
     f = open(test_data_path)
     for idx, line in enumerate(f):
         line = eval(line)
         user, item, rating = line['user'], line['item'], line['rating']
         test_data[idx] = [user, item, rating]
-    
+
+        test_rating_list.append(rating)
+
+    train_rmse = np.sqrt(np.mean((train_rating_list - np.mean(train_rating_list))**2))
+    val_rmse = np.sqrt(np.mean((val_rating_list - np.mean(train_rating_list))**2))
+    test_rmse = np.sqrt(np.mean((test_rating_list - np.mean(train_rating_list))**2))
+    #import pdb; pdb.set_trace()
+    print('AVG: TRAIN RMSE:%.4f, VAL RMSE:%.4f, TEST RMSE:%.4f' % (train_rmse, val_rmse, test_rmse))
+
     #import pdb; pdb.set_trace()
     return train_data, val_data, test_data, user_doc_dict, item_doc_dict
 
@@ -87,11 +100,11 @@ class TrainData():
             
             user, item = self.train_data[data_idx][0], self.train_data[data_idx][1]
             if user in self.user_doc_dict:
-                user_doc.append(self.user_doc_dict[self.train_data[data_idx][0]])
+                user_doc.append(self.user_doc_dict[user])
             else:
                 user_doc.append([PAD]*MAX_DOC_LEN)
             if item in self.item_doc_dict:
-                item_doc.append(self.item_doc_dict[self.train_data[data_idx][1]])
+                item_doc.append(self.item_doc_dict[item])
             else:
                 item_doc.append([PAD]*MAX_DOC_LEN)
 
@@ -100,19 +113,3 @@ class TrainData():
         torch.FloatTensor(rating_list).cuda(), \
         torch.LongTensor(np.array(user_doc)).cuda(),\
         torch.LongTensor(np.array(item_doc)).cuda()
-
-class ValData():
-    def __init__(self, val_data):
-        self.val_data = val_data
-        self.length = len(val_data.keys())
-
-    def get_batch(self, batch_idx_list):
-        user_list, item_list, rating_list = [], [], []
-        for data_idx in batch_idx_list:
-            user_list.append(self.val_data[data_idx][0])
-            item_list.append(self.val_data[data_idx][1])
-            rating_list.append(self.val_data[data_idx][2])
-
-        return torch.LongTensor(user_list).cuda(), \
-        torch.LongTensor(item_list).cuda(), \
-        torch.FloatTensor(rating_list).cuda()
