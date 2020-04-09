@@ -21,7 +21,7 @@ class aspect_rating_1(nn.Module):
         self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
         self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
 
-        dim = conf.embedding_dim
+        dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
@@ -105,20 +105,16 @@ class aspect_rating_1(nn.Module):
             torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
 
         # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, p_t) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, p_t) # (batch_size, mf_dimension)
+        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
+        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
         
-        #user_aspect_embed = self.user_fc_linear(user_aspect_embed)
-        #item_aspect_embed = self.user_fc_linear(item_aspect_embed)
+        user_aspect_embed = self.user_fc_linear(user_aspect_embed)
+        item_aspect_embed = self.user_fc_linear(item_aspect_embed)
 
-        input_vec = torch.matmul(user_aspect_embed * item_aspect_embed, torch.transpose(self.transform_T.weight, 0, 1))
-        import pdb; pdb.set_trace()
+        u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
+        i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
 
-        input_vec = self.user_fc_linear(input_vec)
-        #u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
-        #i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
-
-        #input_vec = torch.cat([u_out, i_out], 1)
+        input_vec = torch.cat([u_out, i_out], 1)
         
         input_vec = self.dropout(input_vec)
 

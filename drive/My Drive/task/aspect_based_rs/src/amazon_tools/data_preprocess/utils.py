@@ -24,11 +24,15 @@ f = open(val_data_path)
 for line in f:
     line = eval(line)
     idx, user, item, rating = line['idx'], line['user'], line['item'], line['rating']
+    max_user = max(max_user, user)
+    max_item = max(max_item, item)
 
 f = open(test_data_path)
 for line in f:
     line = eval(line)
     idx, user, item, rating = line['idx'], line['user'], line['item'], line['rating']
+    max_user = max(max_user, user)
+    max_item = max(max_item, item)
 
 from gensim.models import Word2Vec
 word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))

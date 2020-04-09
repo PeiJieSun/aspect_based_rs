@@ -25,7 +25,8 @@ def generate_review(review):
 def load_all():
     user_doc_dict, item_doc_dict = defaultdict(list), defaultdict(list)
     user_review_dict, item_review_dict = defaultdict(list), defaultdict(list)
-
+    train_rating_list, val_rating_list, test_rating_list = [], [], []
+    
     train_data = {}
     f = open(train_data_path)
     for idx, line in enumerate(f):
@@ -33,6 +34,7 @@ def load_all():
         user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
+        train_rating_list.append(rating)
 
         if len(user_review_dict[user]) < conf.u_max_r:
             user_doc_dict[user].extend(review)
@@ -59,14 +61,22 @@ def load_all():
         line = eval(line)
         user, item, rating = line['user'], line['item'], line['rating']
         val_data[idx] = [user, item, rating]
-    
+        val_rating_list.append(rating)
+
     test_data = {}
     f = open(test_data_path)
     for idx, line in enumerate(f):
         line = eval(line)
         user, item, rating = line['user'], line['item'], line['rating']
         test_data[idx] = [user, item, rating]
-    
+        test_rating_list.append(rating)
+
+    train_rmse = np.sqrt(np.mean((train_rating_list - np.mean(train_rating_list))**2))
+    val_rmse = np.sqrt(np.mean((val_rating_list - np.mean(train_rating_list))**2))
+    test_rmse = np.sqrt(np.mean((test_rating_list - np.mean(train_rating_list))**2))
+    #import pdb; pdb.set_trace()
+    print('AVG: TRAIN RMSE:%.4f, VAL RMSE:%.4f, TEST RMSE:%.4f' % (train_rmse, val_rmse, test_rmse))
+
     #import pdb; pdb.set_trace()
     return train_data, val_data, test_data, user_doc_dict, item_doc_dict
 

@@ -22,35 +22,45 @@ def generate_review(review):
 
 def load_all():
     train_user_historical_review_dict, train_item_historical_review_dict = defaultdict(list), defaultdict(list)
+    train_rating_list, val_rating_list, test_rating_list = [], [], []
 
     train_data = {}
     f = open(train_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
         if len(train_user_historical_review_dict[user]) < conf.u_max_r:
             train_user_historical_review_dict[user].append(idx)
         if len(train_item_historical_review_dict[item]) < conf.i_max_r:
             train_item_historical_review_dict[item].append(idx)
+        train_rating_list.append(rating)
 
     val_data = {}
     f = open(val_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         val_data[idx] = [user, item, rating, review_in]
-    
+        val_rating_list.append(rating)
+
     test_data = {}
     f = open(test_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         test_data[idx] = [user, item, rating, review_in]
-    
+        test_rating_list.append(rating)
+        
+    train_rmse = np.sqrt(np.mean((train_rating_list - np.mean(train_rating_list))**2))
+    val_rmse = np.sqrt(np.mean((val_rating_list - np.mean(train_rating_list))**2))
+    test_rmse = np.sqrt(np.mean((test_rating_list - np.mean(train_rating_list))**2))
+    #import pdb; pdb.set_trace()
+    print('AVG: TRAIN RMSE:%.4f, VAL RMSE:%.4f, TEST RMSE:%.4f' % (train_rmse, val_rmse, test_rmse))
+
     #import pdb; pdb.set_trace()
     return train_data, val_data, test_data, train_user_historical_review_dict, train_item_historical_review_dict
 
