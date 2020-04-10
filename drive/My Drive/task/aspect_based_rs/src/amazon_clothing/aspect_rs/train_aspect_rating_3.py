@@ -39,7 +39,7 @@ if __name__ == '__main__':
     for idx in range(3, conf.vocab_sz):
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
     
-    k_means_weight = np.load('%s/%s.k_means_64.npy' % (conf.target_path, conf.data_name))
+    k_means_weight = np.load('%s/%s.k_means_32.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
 
     model.load_state_dict(model_params)
@@ -62,8 +62,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_47.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_47.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_1_id_48.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_1_id_48.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
