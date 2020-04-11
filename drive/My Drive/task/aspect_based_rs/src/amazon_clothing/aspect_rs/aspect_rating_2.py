@@ -31,7 +31,7 @@ class aspect_rating_2(nn.Module):
         # Parameters for FM
         self.aspect_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
 
-        dim = conf.embedding_dim * 2
+        dim = conf.embedding_dim * 2 + conf.aspect_dimension * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
@@ -136,17 +136,18 @@ class aspect_rating_2(nn.Module):
         item_histor_tensor = \
             torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
 
-        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, common_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, common_dimension)
+        user_aspect_embed = torch.mm(user_histor_tensor, p_t) # (batch_size, common_dimension)
+        item_aspect_embed = torch.mm(item_histor_tensor, p_t) # (batch_size, common_dimension)
         
-        user_aspect_embed = self.aspect_fc_linear(user_aspect_embed)
-        item_aspect_embed = self.aspect_fc_linear(item_aspect_embed)
+        #user_aspect_embed = self.aspect_fc_linear(user_aspect_embed)
+        #item_aspect_embed = self.aspect_fc_linear(item_aspect_embed)
 
-        u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
-        i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
+        #u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
+        #i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
 
-        input_vec = torch.cat([u_out, i_out], 1)
-        input_vec = self.dropout(input_vec)
+        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1)
+        #input_vec = torch.cat([u_out, i_out], 1)
+        #input_vec = self.dropout(input_vec)
 
         return input_vec, abae_out_loss, J_loss, U_loss
 
@@ -159,7 +160,7 @@ class aspect_rating_2(nn.Module):
         aspect_input_vec, abae_out_loss, J_loss, U_loss = self.aspect_embed(label, pos_review, neg_review, \
             user_histor_index, user_histor_value, item_histor_index, item_histor_value)
 
-        input_vec = deepconn_input_vec + 0.1 * aspect_input_vec
+        input_vec = torch.cat([deepconn_input_vec, aspect_input_vec], 1)
         fm_linear_part = self.fc(input_vec)
 
         fm_interactions_1 = torch.mm(input_vec, self.fm_V)
