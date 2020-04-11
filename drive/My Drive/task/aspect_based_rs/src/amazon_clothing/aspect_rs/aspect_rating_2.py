@@ -147,7 +147,7 @@ class aspect_rating_2(nn.Module):
 
         input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1)
         #input_vec = torch.cat([u_out, i_out], 1)
-        #input_vec = self.dropout(input_vec)
+        input_vec = self.dropout(input_vec)
 
         return input_vec, abae_out_loss, J_loss, U_loss
 
