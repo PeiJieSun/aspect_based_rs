@@ -159,7 +159,7 @@ class aspect_rating_2(nn.Module):
         aspect_input_vec, abae_out_loss, J_loss, U_loss = self.aspect_embed(label, pos_review, neg_review, \
             user_histor_index, user_histor_value, item_histor_index, item_histor_value)
 
-        input_vec = 0.5 * deepconn_input_vec + 0.5 * aspect_input_vec
+        input_vec = 0.9 * deepconn_input_vec + 0.1 * aspect_input_vec
         fm_linear_part = self.fc(input_vec)
 
         fm_interactions_1 = torch.mm(input_vec, self.fm_V)
