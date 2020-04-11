@@ -1,3 +1,5 @@
+# AspeRa
+
 import torch
 
 import numpy as np 
@@ -25,25 +27,25 @@ def load_all():
 
     train_data = {}
     f = open(train_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         train_data[idx] = [user, item, rating, review_in]
 
     val_data = {}
     f = open(val_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         val_data[idx] = [user, item, rating, review_in]
     
     test_data = {}
     f = open(test_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, review = line['idx'], line['user'], line['item'], line['rating'], line['review']
+        user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
         test_data[idx] = [user, item, rating, review_in]
     

@@ -19,12 +19,6 @@ class deepconn(nn.Module):
         self.item_fc_linear = nn.Linear(conf.filters_num, conf.embedding_dim)
         self.dropout = nn.Dropout(conf.drop_out)
 
-        # parameters for FM
-        self.user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)  # user/item num * 32
-        self.item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
-        self.user_embedding.weight.requires_grad = False
-        self.item_embedding.weight.requires_grad = False
-
         dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
@@ -76,8 +70,8 @@ class deepconn(nn.Module):
 
         u_fea = self.user_fc_linear(u_fea)
         i_fea = self.item_fc_linear(i_fea)
-        u_out = self.dropout(u_fea) #+ self.user_embedding(uids)
-        i_out = self.dropout(i_fea) #+ self.item_embedding(iids)
+        u_out = self.dropout(u_fea) 
+        i_out = self.dropout(i_fea) 
 
         input_vec = torch.cat([u_out, i_out], 1)
 

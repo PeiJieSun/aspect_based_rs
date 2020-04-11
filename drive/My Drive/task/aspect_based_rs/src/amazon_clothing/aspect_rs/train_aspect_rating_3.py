@@ -1,3 +1,5 @@
+# AspeRa
+
 import os, sys, shutil
 import torch
 import torch.nn as nn
@@ -30,7 +32,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_3 import aspect_rating_3
     model = aspect_rating_3()
-    
+    '''
     model_params = model.state_dict()
     
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
@@ -43,10 +45,10 @@ if __name__ == '__main__':
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
 
     model.load_state_dict(model_params)
-
+    '''
     #import pdb; pdb.set_trace()
 
-    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_42.mod'))
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_49.mod'))
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -89,8 +91,8 @@ if __name__ == '__main__':
                 neg_review, user_list, item_list, rating_list)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             train_abae_loss.extend(tensorToScalar(abae_loss))
-            model.zero_grad(); obj.backward(); optimizer.step()
-
+            #model.zero_grad(); obj.backward(); optimizer.step()
+            import pdb; pdb.set_trace()
         t1 = time()
         
         scheduler.step(epoch)
