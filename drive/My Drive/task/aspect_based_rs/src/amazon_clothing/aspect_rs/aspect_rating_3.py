@@ -34,7 +34,7 @@ class aspect_rating_3(nn.Module):
         self.dropout = nn.Dropout(conf.drop_out)
 
         self.mse_func_1 = nn.MSELoss(reduction='none')
-        self.mse_func_2 = nn.MSELoss()
+        self.mse_func_2 = nn.MSELoss(reduction='sum')
         self.margin_ranking_loss = nn.MarginRankingLoss(margin=1.0, reduction='none')
 
         self.reset_para()
