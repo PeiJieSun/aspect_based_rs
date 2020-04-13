@@ -96,7 +96,7 @@ class aspect_rating_3(nn.Module):
         U_loss = self.mse_func_2(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
         
         ########################### Second: collect the aspect-based user embedding and item embedding ###########################
-        input_vec = self.user_fc_linear(p_t)
+        input_vec = self.user_fc_linear(r_s)
         
         input_vec = self.dropout(input_vec)
 

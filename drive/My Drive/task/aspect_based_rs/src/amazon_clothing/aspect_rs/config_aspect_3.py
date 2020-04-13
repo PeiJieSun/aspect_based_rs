@@ -1,7 +1,7 @@
 word_dimension = 200
 aspect_dimension = 20
 
-common_dimension = aspect_dimension
+common_dimension = word_dimension
 
 num_users = 39380
 num_items = 23034
