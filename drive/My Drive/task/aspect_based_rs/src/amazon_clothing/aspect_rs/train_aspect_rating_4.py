@@ -44,7 +44,8 @@ if __name__ == '__main__':
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
     '''
-
+    
+    '''
     model_params = model.state_dict()
     abae_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
 
@@ -53,8 +54,9 @@ if __name__ == '__main__':
             model_params[param] = abae_params[param]
 
     model.load_state_dict(model_params)
+    '''
 
-    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_4_id_54.mod'))
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_4_id_54.mod'))
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -130,7 +132,7 @@ if __name__ == '__main__':
         train_rmse, val_rmse, test_rmse = np.sqrt(np.mean(train_rating_loss)), \
             np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
 
-        
+        '''
         if epoch == 1:
             min_rating_loss = val_rmse
         if val_rmse < min_rating_loss:
@@ -138,7 +140,7 @@ if __name__ == '__main__':
             log.record('-----------save model------------')
             best_epoch = epoch
         min_rating_loss = min(val_rmse, min_rating_loss)
-        
+        '''
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE loss:{:.4f}'.format(np.mean(train_abae_loss)))

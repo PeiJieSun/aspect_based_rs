@@ -148,7 +148,7 @@ class aspect_rating_4(nn.Module):
         user_aspect_embed = torch.sum(_V, 2)
         item_aspect_embed = torch.sum(_Q, 2)
 
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         ########################### Third: predict ratings with FM module ###########################
         user_aspect_embed = self.user_fc_linear(user_aspect_embed)
         item_aspect_embed = self.user_fc_linear(item_aspect_embed)

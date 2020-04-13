@@ -1,7 +1,7 @@
 word_dimension = 200
-aspect_dimension = 32
+aspect_dimension = 20
 
-common_dimension = word_dimension
+common_dimension = aspect_dimension
 
 num_users = 39380
 num_items = 23034
@@ -24,7 +24,7 @@ weight_decay = 1e-3
 u_max_r = 7
 i_max_r = 14
 
-
+max_review_len = 41
 
 num_negative_reviews = 1
 
