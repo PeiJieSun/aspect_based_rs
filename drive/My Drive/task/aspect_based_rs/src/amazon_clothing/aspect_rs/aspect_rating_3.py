@@ -15,11 +15,11 @@ class aspect_rating_3(nn.Module):
         self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
-        #self.transform_M.weight.requires_grad = False
+        self.transform_M.weight.requires_grad = False
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
-        #self.transform_W.weight.requires_grad = False; self.transform_W.bias.requires_grad=False
+        self.transform_W.weight.requires_grad = False; self.transform_W.bias.requires_grad=False
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
-        #self.transform_T.weight.requires_grad = False
+        self.transform_T.weight.requires_grad = False
 
         self.user_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
 
