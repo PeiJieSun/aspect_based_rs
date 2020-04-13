@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 
-import config_aspect as conf
+import config_aspect_3 as conf
 
 class aspect_rating_3(nn.Module):
     def __init__(self):
@@ -15,13 +15,13 @@ class aspect_rating_3(nn.Module):
         self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dimension, conf.word_dimension, bias=False) # weight: word_dimension * word_dimension
+        self.transform_M.weight.requires_grad = False
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
+        self.transform_W.weight.requires_grad = False; self.transform_W.bias.requires_grad=False
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
+        self.transform_T.weight.requires_grad = False
 
         self.user_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
-
-        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
-        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
 
         dim = conf.embedding_dim
         # ---------------------------fc_linear------------------------------
@@ -40,9 +40,6 @@ class aspect_rating_3(nn.Module):
         self.reset_para()
 
     def reset_para(self):
-        nn.init.uniform_(self.free_user_embedding.weight, a=-0.1, b=0.1)
-        nn.init.uniform_(self.free_item_embedding.weight, a=-0.1, b=0.1)
-
         nn.init.uniform_(self.fc.weight, -0.05, 0.05)
         nn.init.constant_(self.fc.bias, 0.0)
         nn.init.uniform_(self.b_users, a=0, b=0.1)
@@ -99,7 +96,7 @@ class aspect_rating_3(nn.Module):
         U_loss = self.mse_func_2(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
         
         ########################### Second: collect the aspect-based user embedding and item embedding ###########################
-        input_vec = self.user_fc_linear(r_s)
+        input_vec = self.user_fc_linear(p_t)
         
         input_vec = self.dropout(input_vec)
 

@@ -12,7 +12,7 @@ from copy import deepcopy
 from gensim.models import Word2Vec
 
 import DataModule_aspect_3 as data_utils
-import config_aspect as conf
+import config_aspect_3 as conf
 
 from Logging import Logging
 
@@ -32,6 +32,8 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_3 import aspect_rating_3
     model = aspect_rating_3()
+
+    #import pdb; pdb.set_trace()
     '''
     model_params = model.state_dict()
     
@@ -48,7 +50,16 @@ if __name__ == '__main__':
     '''
     #import pdb; pdb.set_trace()
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_49.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_49.mod'))
+
+    model_params = model.state_dict()
+    abae_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
+
+    for param in abae_params:
+        if param in model_params:
+            model_params[param] = abae_params[param]
+    
+    model.load_state_dict(model_params)
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -63,9 +74,9 @@ if __name__ == '__main__':
     
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_49.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_49.mod' % (conf.out_path, conf.data_name)
+    check_dir('%s/train_%s_aspect_rating_3_id_x.log' % (conf.out_path, conf.data_name))
+    log = Logging('%s/train_%s_aspect_rating_3_id_56.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_3_id_56.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -91,8 +102,8 @@ if __name__ == '__main__':
                 neg_review, user_list, item_list, rating_list)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             train_abae_loss.extend(tensorToScalar(abae_loss))
-            #model.zero_grad(); obj.backward(); optimizer.step()
-            import pdb; pdb.set_trace()
+            model.zero_grad(); obj.backward(); optimizer.step()
+            #import pdb; pdb.set_trace()
         t1 = time()
         
         scheduler.step(epoch)

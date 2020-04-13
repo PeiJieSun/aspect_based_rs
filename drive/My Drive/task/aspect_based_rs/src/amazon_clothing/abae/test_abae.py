@@ -18,7 +18,7 @@ def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
 if __name__ == '__main__':
-    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_abae_id_02.mod')
+    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
     c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
 
     #k_means_weight = np.load('/content/drive/My Drive/task/aspect_based_rs/data/amazon_clothing/amazon_clothing.k_means.npy')
@@ -45,4 +45,4 @@ if __name__ == '__main__':
             aspect_word_list += '%s, ' % word_embedding.wv.index2entity[word_idx.item()-3]
         print(aspect_word_list)
 
-    import pdb; pdb.set_trace()
+    import sys; sys.exit(0)

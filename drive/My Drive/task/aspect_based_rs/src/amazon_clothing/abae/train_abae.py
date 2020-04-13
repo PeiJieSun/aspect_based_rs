@@ -50,7 +50,7 @@ if __name__ == '__main__':
     model.load_state_dict(model_params)
     '''
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_abae_id_02.mod'))
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod'))
     
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
@@ -113,4 +113,5 @@ if __name__ == '__main__':
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
 
+        import sys; sys.exit(0)
         #import pdb; pdb.set_trace()

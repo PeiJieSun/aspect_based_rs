@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections import OrderedDict
 
 import torch.utils.data as data
-import config_aspect as conf
+import config_aspect_3 as conf
 
 from copy import deepcopy
 
