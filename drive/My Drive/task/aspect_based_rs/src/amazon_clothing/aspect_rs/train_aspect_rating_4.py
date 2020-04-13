@@ -46,6 +46,8 @@ if __name__ == '__main__':
 
     model.load_state_dict(model_params)
 
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_4_id_54.mod'))
+
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
@@ -59,9 +61,9 @@ if __name__ == '__main__':
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_aspect_rating_1_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_1_id_X.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_1_id_X.mod' % (conf.out_path, conf.data_name)
+    check_dir('%s/train_%s_aspect_rating_4_id_x.log' % (conf.out_path, conf.data_name))
+    log = Logging('%s/train_%s_aspect_rating_4_id_55.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_4_id_55.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict, train_data)
@@ -120,6 +122,7 @@ if __name__ == '__main__':
         train_rmse, val_rmse, test_rmse = np.sqrt(np.mean(train_rating_loss)), \
             np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
 
+        
         if epoch == 1:
             min_rating_loss = val_rmse
         if val_rmse < min_rating_loss:
@@ -127,6 +130,7 @@ if __name__ == '__main__':
             log.record('-----------save model------------')
             best_epoch = epoch
         min_rating_loss = min(val_rmse, min_rating_loss)
+        
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE loss:{:.4f}'.format(np.mean(train_abae_loss)))
