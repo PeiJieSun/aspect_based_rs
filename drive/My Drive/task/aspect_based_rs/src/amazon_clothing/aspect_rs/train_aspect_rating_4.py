@@ -32,7 +32,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_4 import aspect_rating_4
     model = aspect_rating_4()
-    
+    '''
     model_params = model.state_dict()
     
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
@@ -43,6 +43,14 @@ if __name__ == '__main__':
     
     k_means_weight = np.load('%s/%s.k_means.npy' % (conf.target_path, conf.data_name))
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
+    '''
+
+    model_params = model.state_dict()
+    abae_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
+
+    for param in abae_params:
+        if param in model_params:
+            model_params[param] = abae_params[param]
 
     model.load_state_dict(model_params)
 
@@ -62,8 +70,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_rating_4_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_rating_4_id_55.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_rating_4_id_55.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_rating_4_id_61.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_rating_4_id_61.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, train_user_historical_review_dict, train_item_historical_review_dict, train_data)

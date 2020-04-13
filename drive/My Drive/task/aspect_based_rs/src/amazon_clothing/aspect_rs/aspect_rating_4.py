@@ -102,8 +102,8 @@ class aspect_rating_4(nn.Module):
         U_loss = self.mse_func_2(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
         
         ########################### Second: collect the aspect-based user embedding and item embedding ###########################
-        aspect_user_embed = p_t[user_idx_list] # (batch_size * u_max_r, xx_dim)
-        aspect_item_embed = p_t[item_idx_list] # (batch_size * i_max_r, xx_dim)
+        aspect_user_embed = r_s[user_idx_list] # (batch_size * u_max_r, xx_dim)
+        aspect_item_embed = r_s[item_idx_list] # (batch_size * i_max_r, xx_dim)
         
         # (batch_size, xx_dim, u_max_r)
         Q = torch.transpose(aspect_user_embed.view(label.shape[0], -1, conf.common_dimension), 1, 2)
