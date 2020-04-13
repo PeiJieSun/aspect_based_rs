@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     #import pdb; pdb.set_trace()
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_43.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_1_id_43.mod'))
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)

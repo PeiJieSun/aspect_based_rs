@@ -116,13 +116,15 @@ class aspect_rating_1(nn.Module):
         user_aspect_embed = torch.mean(user_aspect_embed, 1)
         item_aspect_embed = torch.mean(item_aspect_embed, 1)
 
+        '''
         # Co-Attention
         user_aspect_embed = F.softmax(torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
             item_aspect_embed.view(label.shape[0], 1, -1)), 1), 1)
 
         item_aspect_embed = F.softmax(torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
             item_aspect_embed.view(label.shape[0], 1, -1)), 2), 1)
-
+        '''
+        
         #import pdb; pdb.set_trace()
 
         input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1)

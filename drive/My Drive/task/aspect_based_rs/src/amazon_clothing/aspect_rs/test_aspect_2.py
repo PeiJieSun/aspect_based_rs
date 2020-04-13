@@ -16,3 +16,5 @@ for (user, item, embed) in review_embed:
     user_embed_loss.append(mse_loss(embed, user_embed[user]))
     item_embed_loss.append(mse_loss(embed, item_embed[item]))
 
+print('user embedding variance')
+print('item embedding variance')
