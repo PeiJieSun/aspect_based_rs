@@ -107,11 +107,6 @@ if __name__ == '__main__':
         log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
         log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
-        log.record('user embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
-        log.record('item embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
-
     log.record("----"*20)
     log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
     log.record("----"*20)
