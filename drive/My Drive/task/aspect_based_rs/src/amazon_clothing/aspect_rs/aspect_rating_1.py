@@ -16,12 +16,10 @@ class aspect_rating_1(nn.Module):
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
 
-        self.user_fc_linear = nn.Linear(2*conf.aspect_dimension, conf.embedding_dim)
+        self.transform_wang = nn.Linear(conf.aspect_dimension, conf.aspect_dimension)
 
-        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
-        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
-
-        dim = conf.embedding_dim
+        self.user_fc_linear = nn.Linear(2*conf.aspect_dimension, 2*conf.embedding_dim)
+        dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
@@ -38,9 +36,6 @@ class aspect_rating_1(nn.Module):
         self.reset_para()
 
     def reset_para(self):
-        nn.init.uniform_(self.free_user_embedding.weight, a=-0.1, b=0.1)
-        nn.init.uniform_(self.free_item_embedding.weight, a=-0.1, b=0.1)
-
         nn.init.uniform_(self.fc.weight, -0.05, 0.05)
         nn.init.constant_(self.fc.bias, 0.0)
         nn.init.uniform_(self.b_users, a=0, b=0.1)
@@ -98,39 +93,25 @@ class aspect_rating_1(nn.Module):
         U_loss = self.mse_func_2(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
         
         ########################### Second: collect the aspect-based user embedding and item embedding ###########################
-        '''
-        # get the embedding of the user and the item
-        user_histor_tensor = \
-            torch.sparse.FloatTensor(user_histor_index, user_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
-        item_histor_tensor = \
-            torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
-
-        # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, p_t) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, p_t) # (batch_size, mf_dimension)
-        '''
-
         user_aspect_embed = p_t[user_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, u_max_r, mf_dimension)
         item_aspect_embed = p_t[item_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, i_max_r, mf_dimension)
 
-        user_aspect_embed = torch.mean(user_aspect_embed, 1)
-        item_aspect_embed = torch.mean(item_aspect_embed, 1)
+        user_aspect_embed = torch.mean(user_aspect_embed, 1) # (batch_size, xx_dimension)
+        item_aspect_embed = torch.mean(item_aspect_embed, 1) # (batch_size, xx_dimension)
 
-        '''
+        item_aspect_embed = self.transform_wang(item_aspect_embed)
+
         # Co-Attention
-        user_aspect_embed = F.softmax(torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
-            item_aspect_embed.view(label.shape[0], 1, -1)), 1), 1)
+        user_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
+            item_aspect_embed.view(label.shape[0], 1, -1)), 1)
 
-        item_aspect_embed = F.softmax(torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
-            item_aspect_embed.view(label.shape[0], 1, -1)), 2), 1)
-        '''
+        #item_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
+        #    item_aspect_embed.view(label.shape[0], 1, -1)), 2)
         
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
 
-        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1)
-
+        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
         input_vec = self.user_fc_linear(input_vec)
-        
         input_vec = self.dropout(input_vec)
 
         fm_linear_part = self.fc(input_vec)
