@@ -18,6 +18,9 @@ class aspect_rating_1(nn.Module):
 
         self.transform_wang = nn.Linear(conf.aspect_dimension, conf.aspect_dimension)
 
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.aspect_dimension)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.aspect_dimension)
+
         self.user_fc_linear = nn.Linear(2*conf.aspect_dimension, 2*conf.embedding_dim)
         dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
@@ -36,6 +39,9 @@ class aspect_rating_1(nn.Module):
         self.reset_para()
 
     def reset_para(self):
+        nn.init.uniform_(self.free_user_embedding.weight, a=-0.1, b=0.1)
+        nn.init.uniform_(self.free_item_embedding.weight, a=-0.1, b=0.1)
+
         nn.init.uniform_(self.fc.weight, -0.05, 0.05)
         nn.init.constant_(self.fc.bias, 0.0)
         nn.init.uniform_(self.b_users, a=0, b=0.1)
@@ -108,7 +114,10 @@ class aspect_rating_1(nn.Module):
         #item_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
         #    item_aspect_embed.view(label.shape[0], 1, -1)), 2)
         
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
+
+        user_aspect_embed = user_aspect_embed + self.free_user_embedding(user)
+        item_aspect_embed = item_aspect_embed + self.free_item_embedding(item)
 
         input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
         input_vec = self.user_fc_linear(input_vec)
