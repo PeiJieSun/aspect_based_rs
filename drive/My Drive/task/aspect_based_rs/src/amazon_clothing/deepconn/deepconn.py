@@ -19,6 +19,9 @@ class deepconn(nn.Module):
         self.item_fc_linear = nn.Linear(conf.filters_num, conf.embedding_dim)
         self.dropout = nn.Dropout(conf.drop_out)
 
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
+
         dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
@@ -68,8 +71,8 @@ class deepconn(nn.Module):
         u_fea = F.max_pool1d(u_fea, u_fea.size(2)).squeeze(2)
         i_fea = F.max_pool1d(i_fea, i_fea.size(2)).squeeze(2)
 
-        u_fea = self.user_fc_linear(u_fea)
-        i_fea = self.item_fc_linear(i_fea)
+        u_fea = self.user_fc_linear(u_fea) + self.free_user_embedding(user)
+        i_fea = self.item_fc_linear(i_fea) + self.free_item_embedding(item)
         u_out = self.dropout(u_fea) 
         i_out = self.dropout(i_fea) 
 
