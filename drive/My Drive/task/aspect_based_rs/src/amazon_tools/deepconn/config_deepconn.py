@@ -18,7 +18,7 @@ batch_size = 256
 train_epochs = 30
 weight_decay = 1e-3
 
-embedding_dim = 32
+embedding_dim = 20
 lr_abae = 1.0
 lr_rating = 1.0
 learning_rate = 2e-3

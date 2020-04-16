@@ -32,7 +32,7 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from aspect_rating_1 import aspect_rating_1
     model = aspect_rating_1()
-    
+    '''
     model_params = model.state_dict()
     
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
@@ -45,7 +45,9 @@ if __name__ == '__main__':
     model_params['transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (aspect_dimesion, word_dimension)
 
     model.load_state_dict(model_params)
-
+    '''
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_tools_aspect_rating_1_id_03.mod'))
+    
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
@@ -89,7 +91,7 @@ if __name__ == '__main__':
                 user_list, item_list, rating_list, user_idx_list, item_idx_list)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             train_abae_loss.extend(tensorToScalar(abae_loss))
-            model.zero_grad(); obj.backward(); optimizer.step()
+            #model.zero_grad(); obj.backward(); optimizer.step()
 
         t1 = time()
         
