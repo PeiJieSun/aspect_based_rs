@@ -1,21 +1,19 @@
-word_dimension = 200
-aspect_dimension = 20
-
 num_users = 24302
 num_items = 10672
-
 avg_rating = 4.0883
 
-embedding_dim = 32
+vocab_sz = 35901 + 3
 
-vocab_sz = 16933 + 3
-
-u_max_r = 8
-i_max_r = 14
+u_max_r = 9
+i_max_r = 24
 
 max_review_len = 163
 
-batch_size = 256
+word_dimension = 200
+aspect_dimension = 20
+embedding_dim = 32
+
+batch_size = 128
 lr_abae = 1.0
 lr_rating = 1.0
 

@@ -8,7 +8,6 @@ vocab_sz = 35901 + 3
 u_max_r = 9
 i_max_r = 24
 
-
 word_dimension = 200
 aspect_dimension = 20
 
