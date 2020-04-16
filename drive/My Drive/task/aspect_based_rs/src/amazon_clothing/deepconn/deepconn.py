@@ -73,8 +73,9 @@ class deepconn(nn.Module):
 
         u_fea = self.user_fc_linear(u_fea) + self.free_user_embedding(user)
         i_fea = self.item_fc_linear(i_fea) + self.free_item_embedding(item)
-        u_out = self.dropout(u_fea) 
-        i_out = self.dropout(i_fea) 
+        
+        #u_out = self.dropout(u_fea) 
+        #i_out = self.dropout(i_fea)
 
         input_vec = torch.cat([u_out, i_out], 1)
 
