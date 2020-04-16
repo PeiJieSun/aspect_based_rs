@@ -53,6 +53,7 @@ x = np.sort(item_len_list)
 xLen = len(x)
 max_item_review_num = x[int(P_REVIEW * xLen) - 1]
 
+print('max review length:%d' % (len(review)))
 print('avg rating:%.4f' % (np.mean(total_rating_list)))
 print('num users:%d' % (max_user + 1))
 print('num items:%d' % (max_item + 1))

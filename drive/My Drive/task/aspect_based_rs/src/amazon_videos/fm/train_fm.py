@@ -64,8 +64,6 @@ if __name__ == '__main__':
         train_loss, train_prediction = [], []
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, rating_list = train_dataset.get_batch(batch_idx_list)
-            print(user_list)
-            print(item_list)
             prediction, obj_loss, mse_loss = model(user_list, item_list, rating_list)
             #import pdb; pdb.set_trace()
             train_loss.extend(tensorToScalar(mse_loss))
@@ -113,4 +111,4 @@ if __name__ == '__main__':
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
         
-        import sys; sys.exit(0)
+        #import sys; sys.exit(0)

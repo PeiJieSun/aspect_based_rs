@@ -1,5 +1,5 @@
 word_dimension = 200
-aspect_dimension = 32
+aspect_dimension = 20
 
 num_users = 16637
 num_items = 10217
@@ -13,6 +13,7 @@ vocab_sz = 16933 + 3
 u_max_r = 8
 i_max_r = 14
 
+max_review_len = 
 
 batch_size = 256
 lr_abae = 1.0
