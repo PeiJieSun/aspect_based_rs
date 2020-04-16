@@ -43,8 +43,10 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_fm_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_fm_id_01.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_fm_id_01.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_fm_id_02.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_fm_id_02.mod' % (conf.out_path, conf.data_name)
+
+    #import pdb; pdb.set_trace()
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -96,6 +98,7 @@ if __name__ == '__main__':
         if epoch == 1:
             min_loss = val_loss
         if val_loss < min_loss:
+            print('save model')
             torch.save(model.state_dict(), train_model_path)
         min_loss = min(val_loss, min_loss)
 

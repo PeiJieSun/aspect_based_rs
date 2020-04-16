@@ -49,7 +49,7 @@ class fm(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) + fm_linear_part + self.b_users[uids] + self.b_items[iids] #+ conf.avg_rating
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) + fm_linear_part #+ self.b_users[uids] + self.b_items[iids] #+ conf.avg_rating
 
         prediction = fm_output.squeeze(1)
         mse_loss = self.mse_func_1(prediction, labels)
