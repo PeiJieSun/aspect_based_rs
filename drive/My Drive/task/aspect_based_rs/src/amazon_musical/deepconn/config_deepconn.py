@@ -1,12 +1,12 @@
-num_users = 24302
-num_items = 10672
+num_users = 1428
+num_items = 900
 
-avg_rating = 4.0883
+avg_rating = 4.4752
 
 vocab_sz = 35901 + 3
 
-u_max_r = 9
-i_max_r = 24
+u_max_r = 7
+i_max_r = 11
 
 word_dimension = 200
 
