@@ -16,11 +16,12 @@ class aspect_rating_1(nn.Module):
         self.transform_W = nn.Linear(conf.word_dimension, conf.aspect_dimension) # weight: aspect_dimension * word_diension
         self.transform_T = nn.Linear(conf.aspect_dimension, conf.word_dimension, bias=False) # weight: word_dimension * aspect_dimension
 
-        self.user_fc_linear = nn.Linear(conf.common_dimension, conf.embedding_dim)
+        self.transform_wang = nn.Linear(conf.aspect_dimension, conf.aspect_dimension)
 
-        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)
-        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.aspect_dimension)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.aspect_dimension)
 
+        self.user_fc_linear = nn.Linear(2*conf.aspect_dimension, 2*conf.embedding_dim)
         dim = conf.embedding_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
@@ -50,7 +51,7 @@ class aspect_rating_1(nn.Module):
     def forward(self, historical_review, # (num_review, sequence_length)
         neg_review, # (num_review * num_negative, word_dimension)
         user, item, label, # (batch_size, 1)
-        user_histor_index, user_histor_value, item_histor_index, item_histor_value):
+        user_idx_list, item_idx_list):
         ########################### First: encode the historical review, and get the aspect-based review embedding ###########################
         # encode the historical reviews of the target user and item(mapping the historical reviews of the target user and item to the aspect space)
         # historical_review_set ==> aspect-based historical review embedding
@@ -98,24 +99,28 @@ class aspect_rating_1(nn.Module):
         U_loss = self.mse_func_2(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.aspect_dimension).cuda())
         
         ########################### Second: collect the aspect-based user embedding and item embedding ###########################
-        # get the embedding of the user and the item
-        user_histor_tensor = \
-            torch.sparse.FloatTensor(user_histor_index, user_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
-        item_histor_tensor = \
-            torch.sparse.FloatTensor(item_histor_index, item_histor_value, torch.Size([label.shape[0], w.shape[0]])) # (batch_size, num_review)
+        user_aspect_embed = p_t[user_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, u_max_r, mf_dimension)
+        item_aspect_embed = p_t[item_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, i_max_r, mf_dimension)
 
-        # predict the ratings of user-item pairs
-        user_aspect_embed = torch.mm(user_histor_tensor, r_s) # (batch_size, mf_dimension)
-        item_aspect_embed = torch.mm(item_histor_tensor, r_s) # (batch_size, mf_dimension)
+        user_aspect_embed = torch.mean(user_aspect_embed, 1) # (batch_size, xx_dimension)
+        item_aspect_embed = torch.mean(item_aspect_embed, 1) # (batch_size, xx_dimension)
+
+        item_aspect_embed = self.transform_wang(item_aspect_embed)
+
+        # Co-Attention
+        user_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
+            item_aspect_embed.view(label.shape[0], 1, -1)), 1)
+
+        #item_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
+        #    item_aspect_embed.view(label.shape[0], 1, -1)), 2)
         
-        user_aspect_embed = self.user_fc_linear(user_aspect_embed)
-        item_aspect_embed = self.user_fc_linear(item_aspect_embed)
+        #import pdb; pdb.set_trace()
 
-        u_out = self.dropout(user_aspect_embed) #+ self.free_user_embedding(user)
-        i_out = self.dropout(item_aspect_embed) #+ self.free_item_embedding(item)
+        user_aspect_embed = user_aspect_embed + self.free_user_embedding(user)
+        item_aspect_embed = item_aspect_embed + self.free_item_embedding(item)
 
-        input_vec = torch.cat([u_out, i_out], 1)
-        
+        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
+        input_vec = self.user_fc_linear(input_vec)
         input_vec = self.dropout(input_vec)
 
         fm_linear_part = self.fc(input_vec)

@@ -19,7 +19,7 @@ class fm(nn.Module):
         self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
 
         self.mse_func_1 = nn.MSELoss(reduction='none')
-        self.mse_func_2 = nn.MSELoss()
+        self.mse_func_2 = nn.MSELoss(reduction='sum')
 
         self.reset_para()
 

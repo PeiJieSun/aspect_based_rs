@@ -81,10 +81,10 @@ if use_cuda:
     x = torch.FloatTensor(x).cuda() # (Npoints, D)
 
     # get the cluster center vectors c 
-    K = 32
+    K = 20
     clx, c = KMeans(x, K)
-    check_dir('%s/%s.k_means_32' % (conf.target_path, conf.data_name))
-    np.save('%s/%s.k_means_32' % (conf.target_path, conf.data_name), tensorToScalar(c))
+    check_dir('%s/%s.k_means' % (conf.target_path, conf.data_name))
+    np.save('%s/%s.k_means' % (conf.target_path, conf.data_name), tensorToScalar(c))
     
     # output the related words to each aspect
     x_i = F.normalize(x[:, None, :], p=2, dim=2) # (Npoints, 1, D)
