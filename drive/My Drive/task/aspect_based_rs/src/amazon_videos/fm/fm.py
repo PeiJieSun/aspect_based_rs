@@ -40,7 +40,8 @@ class fm(nn.Module):
         #import pdb; pdb.set_trace()
 
         input_vec = torch.cat([u_fea, i_fea], 1)
-
+        import pdb; pdb.set_trace()
+        
         fm_linear_part = self.fc(input_vec)
 
         fm_interactions_1 = torch.mm(input_vec, self.fm_V)
