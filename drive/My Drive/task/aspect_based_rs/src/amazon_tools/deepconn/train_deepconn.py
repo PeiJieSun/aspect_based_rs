@@ -31,7 +31,7 @@ if __name__ == '__main__':
     from deepconn import deepconn
     model = deepconn()
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_tools_aspect_deepconn_id_01.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_tools_aspect_deepconn_id_01.mod'))
 
     model.cuda()
     
@@ -47,8 +47,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_aspect_deepconn_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_aspect_deepconn_id_01.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_aspect_deepconn_id_01.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_aspect_deepconn_id_02.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_aspect_deepconn_id_02.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data, user_doc_dict, item_doc_dict)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
             obj, rating_loss, prediction = model(user_list, item_list, rating_list, user_doc, item_doc)
             train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
             
-            #model.zero_grad(); obj.backward(); optimizer.step()
+            model.zero_grad(); obj.backward(); optimizer.step()
         t1 = time()
         
         scheduler.step(epoch)

@@ -10,7 +10,7 @@ i_max_r = 14
 
 
 word_dimension = 200
-aspect_dimension = 20
+aspect_dimension = 32
 
 common_dimension = word_dimension
 
