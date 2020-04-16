@@ -13,7 +13,7 @@ vocab_sz = 16933 + 3
 u_max_r = 8
 i_max_r = 14
 
-max_review_len = 
+max_review_len = 84
 
 batch_size = 256
 lr_abae = 1.0

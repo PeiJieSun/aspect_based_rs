@@ -12,7 +12,7 @@ lr = 2e-3
 num_workers = 0
 
 batch_size = 128
-train_epochs = 20
+train_epochs = 100
 weight_decay = 1e-3
 
 root_path = '/content/drive/My Drive/task/aspect_based_rs'
