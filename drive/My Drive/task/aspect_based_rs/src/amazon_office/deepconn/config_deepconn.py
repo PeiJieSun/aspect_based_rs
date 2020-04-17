@@ -25,7 +25,7 @@ kernel_size = 3
 filters_num = 100
 
 root_path = '/content/drive/My Drive/task/aspect_based_rs'
-data_name = 'amazon_musical'
+data_name = 'amazon_office'
 target_path = '%s/data/%s' % (root_path, data_name)
 out_path = '%s/out/%s' % (root_path, data_name)
 model_path = '%s/out/model' % root_path
