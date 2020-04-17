@@ -116,8 +116,8 @@ class aspect_rating_1(nn.Module):
         
         #import pdb; pdb.set_trace()
 
-        user_aspect_embed = user_aspect_embed + self.free_user_embedding(user)
-        item_aspect_embed = item_aspect_embed + self.free_item_embedding(item)
+        user_aspect_embed = user_aspect_embed# + self.free_user_embedding(user)
+        item_aspect_embed = item_aspect_embed# + self.free_item_embedding(item)
 
         input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
         input_vec = self.user_fc_linear(input_vec)
