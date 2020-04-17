@@ -30,7 +30,7 @@ def load_all():
         line = eval(line)
         user, item, rating, review = line['user'], line['item'], line['rating'], line['review']
         review_in = generate_review(review)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         train_data[idx] = [user, item, rating, review_in]
         if len(train_user_historical_review_dict[user]) < conf.u_max_r:
             train_user_historical_review_dict[user].append(idx)

@@ -8,7 +8,7 @@ vocab_sz = 11683 + 3
 u_max_r = 13
 i_max_r = 32
 
-max_review_len = 67
+max_review_len = 108
 
 word_dimension = 200
 aspect_dimension = 20
