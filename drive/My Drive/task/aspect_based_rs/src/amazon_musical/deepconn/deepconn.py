@@ -87,8 +87,8 @@ class deepconn(nn.Module):
         i_out = self.dropout(i_fea) + self.free_item_embedding(item)
         '''
 
-        u_out = u_fea + self.free_user_embedding(user)
-        i_out = i_fea + self.free_item_embedding(item)
+        u_out = u_fea #+ self.free_user_embedding(user)
+        i_out = i_fea #+ self.free_item_embedding(item)
         #import pdb; pdb.set_trace()
 
         input_vec = torch.cat([u_out, i_out], 1)
