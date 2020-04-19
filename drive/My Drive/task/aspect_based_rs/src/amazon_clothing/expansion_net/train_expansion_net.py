@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_expansion_net_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_expansion_net_id_02.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_expansion_net_id_02.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_expansion_net_id_04.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_expansion_net_id_04.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         val_loss = []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, \
+            generation_loss, out_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             val_loss.extend([out_loss.item()]*len(batch_idx_list))
         t2 = time()

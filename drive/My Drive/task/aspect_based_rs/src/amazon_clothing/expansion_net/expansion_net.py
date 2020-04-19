@@ -47,11 +47,11 @@ class expansion_net(nn.Module):
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
 
         h_0 = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
-        c_0 = torch.zeros(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
 
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
 
-        outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
+        #outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
+        outputs, h_n = self.rnn(review_input_embed)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
         
         # calculate a2t
@@ -70,6 +70,7 @@ class expansion_net(nn.Module):
         # gamma_u.view(1, user.shape[0], -1): (1, batch_size, m)
         # gamma_i.view(1, user.shape[0], -1): (1, batch_size, m)
         a2t = alpha_tu * gamma_u.repeat(outputs.shape[0], 1) + alpha_ti * gamma_i.repeat(outputs.shape[0], 1) # (seq_length * batch_size, m)
+        #import pdb; pdb.set_trace()
 
         # calculate a3t
         # torch.cat([beta_u, beta_i], 1): (batch_size, 2*k)
@@ -86,7 +87,7 @@ class expansion_net(nn.Module):
         aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
         aspect_probit = F.log_softmax(aspect_probit, 1)
 
-        Pwt = PvWt + aspect_probit
+        Pwt = PvWt# + aspect_probit
         obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
 
         out_loss = F.nll_loss(PvWt, review_output.view(-1), reduction='mean')
