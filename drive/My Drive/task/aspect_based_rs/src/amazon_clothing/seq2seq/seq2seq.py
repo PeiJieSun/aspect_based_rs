@@ -26,8 +26,8 @@ class seq2seq(nn.Module):
         h_0 = torch.zeros(1, review_input_embed.shape[1], conf.word_dimension).cuda()
         outputs, h_n = self.rnn(review_input_embed, h_0) # (sequence_length, batch_size, hidden_size)
         review_output_embed = outputs.view(-1, outputs.size()[2])# (sequence_length, batch_size, hidden_size)
-        softmax_out = self.softmax_loss(review_output_embed, review_output.view(-1))
- 
-        obj_loss = softmax_out.loss
+        
+        Pwt = self.softmax_loss.log_prob(review_output_embed)
+        obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
         
         return obj_loss

@@ -72,25 +72,32 @@ if __name__ == '__main__':
     min_loss = 0
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
+
+        train_dataset.construct_aspect_voab()
+        aspect_count = train_dataset.count_aspect_words()
+        log.record('The number of the words which are aspect words is:%d' % aspect_count)
+
+        review_aspect, review_aspect_bool = train_dataset.construct_aspect_voab()
+
         model.train()
 
         train_loss = []
         for batch_idx_list in val_batch_sampler:
-            user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool = train_dataset.get_batch(batch_idx_list)
+            user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
             generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             train_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            print(np.sum(train_loss))
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
 
+        import pdb; pdb.set_trace()
         # evaluate the performance of the model with following xxx 
         model.eval()
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool = val_dataset.get_batch(batch_idx_list)
+            user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
             generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             val_loss.extend([generation_loss.item()]*len(batch_idx_list))
@@ -98,8 +105,7 @@ if __name__ == '__main__':
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool = test_dataset.get_batch(batch_idx_list)
+            user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
             generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             test_loss.extend([generation_loss.item()]*len(batch_idx_list))

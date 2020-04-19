@@ -28,6 +28,7 @@ class expansion_net(nn.Module):
         self.linear_1 = nn.Linear(conf.m + conf.n, 1)
         self.linear_2 = nn.Linear(2*conf.k, conf.k)
         self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
+        self.linear_4 = nn.Linear(conf.n+conf.m, 1)
 
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
@@ -79,17 +80,14 @@ class expansion_net(nn.Module):
         a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
 
         ############################### Pv(Wt) #########################################
-        softmax_out = self.softmax_loss(torch.cat([review_output_embed, a2t], 1), review_output.view(-1))
+        PvWt = self.softmax_loss.log_prob(torch.cat([review_output_embed, a2t], 1)) # (seq_length*batch_size, vocab_sz)
 
         ############################### P(Wt) #########################################
-        review_aspect_embed = F.one_hot(review_aspect, num_classes=conf.aspect_dimension).view(-1, conf.aspect_dimension) # (seq_length*batch_size, k)
-        a3t = a3t.view(-1, conf.aspect_dimension) # (seq_length*batch_size, k)
-        
-        import pdb; pdb.set_trace()
-        # review_aspect_bool: (seq_length*batch_size, 1)
-        aspect_probit = torch.sum(review_aspect_embed * a3t * review_aspect_bool, -1, keepdim=True)
+        aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
+        aspect_probit = F.log_softmax(aspect_probit, 1)
 
-        import pdb; pdb.set_trace()
+        Pwt = PvWt #+ aspect_probit
+        obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
 
-        obj_loss = torch.mean(-torch.log(torch.exp(softmax_out.output) + aspect_probit.view(-1)))
+        #import pdb; pdb.set_trace()
         return obj_loss

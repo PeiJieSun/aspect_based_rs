@@ -68,45 +68,18 @@ class TrainData():
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
             review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
 
-            # construct review_aspect_list, review_aspect_bool_list
-            tmp_review_aspect_list, tmp_review_aspect_bool_list = [], []
-            for word_id in self.train_data[data_idx][4]:
-                if word_id in self.aspect_vocab:
-                    tmp_review_aspect_bool_list.append([1])
-                    tmp_review_aspect_list.append(self.aspect_vocab[word_id])
-                else:
-                    tmp_review_aspect_bool_list.append([0])
-                    tmp_review_aspect_list.append(0)
-            review_aspect_bool_list.append(tmp_review_aspect_bool_list) # (batch_size, seq_length)
-            review_aspect_list.append(tmp_review_aspect_list) # (batch_size, seq_length)
+        #import pdb; pdb.set_trace()
 
-        review_aspect_list = np.transpose(review_aspect_list) # (seq_length, batch_size)
-        review_aspect_bool_list = np.transpose(review_aspect_bool_list) # (seq_length, batch_size)
-
-        review_aspect_list = review_aspect_list.reshape(-1, 1) #(seq_length*batch_size, 1)
-        review_aspect_bool_list = review_aspect_bool_list.reshape(-1, 1) # (seq_length*batch_size, 1)
-
-        
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \
         torch.LongTensor(np.transpose(review_input_list)).cuda(), \
-        torch.LongTensor(np.transpose(review_output_list)).cuda(), \
-        torch.LongTensor(review_aspect_list).cuda(), \
-        torch.LongTensor(review_aspect_bool_list).cuda()
-        '''
-        return torch.LongTensor(user_list), \
-        torch.LongTensor(item_list), \
-        torch.FloatTensor(rating_list), \
-        torch.LongTensor(np.transpose(review_input_list)), \
-        torch.LongTensor(np.transpose(review_output_list)), \
-        torch.LongTensor(review_aspect_list), \
-        torch.LongTensor(review_aspect_bool_list)
-        '''
+        torch.LongTensor(np.transpose(review_output_list)).cuda()
+
     def construct_aspect_voab(self):
         aspect_vocab = {}
 
-        aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_aspect_rating_3_id_59.mod')
+        aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
         c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
         x = aspect_params['word_embedding.weight'] # (num_words, word_dimension)
 
@@ -120,14 +93,27 @@ class TrainData():
 
         word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
 
-        for idx, value in enumerate(indices):
-            for word_id in value:
-                aspect_vocab[word_id] = idx
+        for idx, word_idx_list in enumerate(indices):
+            aspect_word_list = 'aspect_%d: ' % (idx+1)
+            for word_idx in word_idx_list:
+                aspect_word_list += '%s, ' % word_embedding.wv.index2entity[word_idx.item()-3]
+                aspect_vocab[word_idx.item()] = idx
         self.aspect_vocab = aspect_vocab
+
+        review_aspect, review_aspect_bool = [], []
+        for word_idx in range(conf.vocab_sz):
+            if word_idx in aspect_vocab:
+                review_aspect.append(aspect_vocab[word_idx])
+                review_aspect_bool.append(1)
+            else:
+                review_aspect.append(0)
+                review_aspect_bool.append(0)
+        
+        return torch.LongTensor(review_aspect).cuda(), torch.LongTensor(review_aspect_bool).cuda().view(1, -1)
 
     def count_aspect_words(self):
         aspect_count = 0
-        for value in self.train_data:
+        for key, value in self.train_data.items():
             review = value[4]
             for word_id in review:
                 if word_id in self.aspect_vocab:
