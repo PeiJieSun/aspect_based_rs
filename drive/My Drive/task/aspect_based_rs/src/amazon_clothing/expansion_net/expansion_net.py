@@ -86,7 +86,7 @@ class expansion_net(nn.Module):
         aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
         aspect_probit = F.log_softmax(aspect_probit, 1)
 
-        Pwt = PvWt #+ aspect_probit
+        Pwt = PvWt + aspect_probit
         obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
 
         #import pdb; pdb.set_trace()
