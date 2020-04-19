@@ -9,8 +9,8 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_seq2seq as data_utils
-import config_seq2seq as conf
+import DataModule_expansion_net as data_utils
+import config_expansion_net as conf
 
 from Logging import Logging
 
@@ -28,8 +28,8 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    from seq2seq import seq2seq
-    model = seq2seq()
+    from expansion_net import expansion_net
+    model = expansion_net()
 
     # load word embedding from pretrained word2vec model
     model_params = model.state_dict()
@@ -55,9 +55,9 @@ if __name__ == '__main__':
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_seq2seq_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_seq2seq_id_02.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_seq2seq_id_02.mod' % (conf.out_path, conf.data_name)
+    check_dir('%s/train_%s_expansion_net_id_x.log' % (conf.out_path, conf.data_name))
+    log = Logging('%s/train_%s_expansion_net_id_01.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_expansion_net_id_01.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -73,11 +73,13 @@ if __name__ == '__main__':
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
         model.train()
-        
+
         train_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output, review_aspect, \
+                review_aspect_bool = train_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, \
+                review_output, review_aspect, review_aspect_bool)
             train_loss.extend([generation_loss.item()]*len(batch_idx_list))
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
@@ -87,15 +89,19 @@ if __name__ == '__main__':
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output, review_aspect, \
+                review_aspect_bool = val_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, \
+                review_output, review_aspect, review_aspect_bool)
             val_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            _, _, _, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output, review_aspect, \
+                review_aspect_bool = test_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, \
+                review_output, review_aspect, review_aspect_bool)
             test_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t3 = time()
         
