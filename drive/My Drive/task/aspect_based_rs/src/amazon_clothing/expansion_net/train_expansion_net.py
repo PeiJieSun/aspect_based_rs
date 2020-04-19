@@ -87,11 +87,9 @@ if __name__ == '__main__':
             generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             train_loss.extend([generation_loss.item()]*len(batch_idx_list))
-            print(np.sum(train_loss))
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
 
-        import pdb; pdb.set_trace()
         # evaluate the performance of the model with following xxx 
         model.eval()
         
