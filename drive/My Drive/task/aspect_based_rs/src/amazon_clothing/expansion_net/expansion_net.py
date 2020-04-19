@@ -89,5 +89,6 @@ class expansion_net(nn.Module):
         Pwt = PvWt + aspect_probit
         obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
 
+        out_loss = F.nll_loss(PvWt, review_output.view(-1), reduction='mean')
         #import pdb; pdb.set_trace()
-        return obj_loss
+        return obj_loss, out_loss
