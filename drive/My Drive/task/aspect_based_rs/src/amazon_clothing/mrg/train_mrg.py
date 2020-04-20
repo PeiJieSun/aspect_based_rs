@@ -31,6 +31,17 @@ if __name__ == '__main__':
     from mrg import mrg
     model = mrg()
 
+    # load word embedding from pretrained word2vec model
+    model_params = model.state_dict()
+
+    word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
+    for idx in range(3):
+        model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
+    for idx in range(3, conf.vocab_sz):
+        model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
+
+    model.load_state_dict(model_params)
+
     model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -45,8 +56,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_mrg_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_mrg_id_x.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_mrg_id_x.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_mrg_id_01.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_mrg_id_01.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -58,61 +69,49 @@ if __name__ == '__main__':
     test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
-    min_rating_loss = 0
+    min_loss = 0
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
         model.train()
-
-        train_rating_loss, train_generation_loss, train_prediction = [], [], []
-        for batch_idx_list in train_batch_sampler:
-            user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            
-            prediction, rating_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
-
-            train_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
-            train_generation_loss.extend([generation_loss.item()]*len(batch_idx_list))
-            train_prediction.extend(tensorToScalar(prediction))
-            
-            model.zero_grad(); obj_loss.backward(); optimizer.step()
-        t1 = time()
-
-        scheduler.step(epoch)
+        
+        train_loss = []
+        for batch_idx_list in val_batch_sampler:
+            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            generation_loss = model(review_input, review_output)
+            train_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            model.zero_grad(); generation_loss.backward(); optimizer.step()
+        t2 = time()
 
         # evaluate the performance of the model with following xxx 
         model.eval()
         
-        val_rating_loss, val_prediction = [], []
+        val_loss = []
         for batch_idx_list in val_batch_sampler:
-            user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss, _, _ = model(user, item, label, review_input, review_output)
-            val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
+            _, _, _, review_input, review_output = val_dataset.get_batch(batch_idx_list)
+            generation_loss = model(review_input, review_output)
+            val_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t2 = time()
 
-        test_rating_loss, test_prediction = [], []
+        test_loss = []
         for batch_idx_list in test_batch_sampler:
-            user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            prediction, rating_loss, _, _ = model(user, item, label, review_input, review_output)
-            test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
+            _, _, _, review_input, review_output = test_dataset.get_batch(batch_idx_list)
+            generation_loss = model(review_input, review_output)
+            test_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t3 = time()
+        
+        train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
 
-        train_rating_loss, val_rating_loss, test_rating_loss =\
-            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
-                
         if epoch == 1:
-            min_rating_loss = val_rating_loss
-        if val_rating_loss < min_rating_loss:
+            min_loss = val_loss
+        if val_loss <= min_loss:
             torch.save(model.state_dict(), train_model_path)
             best_epoch = epoch
-        min_rating_loss = min(val_rating_loss, val_rating_loss)
-
+        min_loss = min(min_loss, val_loss)
+        
         log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
-        log.record('GENERATION loss:%.4f' % (np.mean(train_generation_loss)))
-        log.record('Train RMSE:{:.4f}, Val RMSE:{:.4f}, Test RMSE:{:.4f}'.format(train_rating_loss, val_rating_loss, test_rating_loss))
+        log.record('Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_loss, val_loss, test_loss))
 
-        log.record('Train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
-        log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
-        log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
-
+        #import sys; sys.exit(0)
     print("----"*20)
     print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
     print("----"*20)

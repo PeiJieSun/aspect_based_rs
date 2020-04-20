@@ -9,7 +9,7 @@ batch_size = 256
 
 learning_rate = 1e-3
 
-train_epochs = 30
+train_epochs = 15
 
 sequence_length = 31
 

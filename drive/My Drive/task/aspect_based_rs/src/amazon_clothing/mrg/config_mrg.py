@@ -4,7 +4,7 @@ drop_out = 0.5
 weight_decay = 1e-3
 
 vocab_sz = 15350 + 3
-hidden_size = 256
+hidden_size = 200
 batch_size = 256
 
 num_users = 39380
@@ -12,7 +12,7 @@ num_items = 23034
 
 learning_rate = 1e-3
 
-train_epochs = 30
+train_epochs = 15
 
 sequence_length = 31
 

@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import numpy as np 
 from collections import defaultdict
 
-import torch.utils.data as data
 import config_mrg as conf
 
 from copy import deepcopy
@@ -25,25 +24,25 @@ def generate_review(review):
 def load_all():
     train_data = {}
     f = open(train_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, g_review = line['idx'], line['user'], line['item'], line['rating'], line['g_review']
+        user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
         train_data[idx] = [user, item, rating, review_in, review_out]
 
     val_data = {}
     f = open(val_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, g_review = line['idx'], line['user'], line['item'], line['rating'], line['g_review']
+        user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
         val_data[idx] = [user, item, rating, review_in, review_out]
     
     test_data = {}
     f = open(test_data_path)
-    for line in f:
+    for idx, line in enumerate(f):
         line = eval(line)
-        idx, user, item, rating, g_review = line['idx'], line['user'], line['item'], line['rating'], line['g_review']
+        user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
         test_data[idx] = [user, item, rating, review_in, review_out]
         
@@ -54,7 +53,7 @@ class TrainData():
         self.train_data = train_data
         self.length = len(train_data.keys())
 
-    def get_batch(self, batch_idx_list):        
+    def get_batch(self, batch_idx_list):
         user_list, item_list, rating_list = [], [], []
         review_input_list, review_output_list = [], []
 
@@ -65,7 +64,7 @@ class TrainData():
 
             review_input_list.append(self.train_data[data_idx][3])
             review_output_list.append(self.train_data[data_idx][4])
-
+        
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \

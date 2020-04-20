@@ -23,16 +23,18 @@ class mrg(nn.Module):
 
         # PARAMETERS FOR LSTM
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
-        self.rnn = nn.LSTM(conf.word_dimension + int(conf.embedding_dim / 2), conf.hidden_size, num_layers=1, dropout=0.4)
+        #self.rnn = nn.GRU(conf.word_dimension + int(conf.embedding_dim / 2), conf.hidden_size, num_layers=1, dropout=0.4)
+        self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1, dropout=0.4)
         self.initial_layer = nn.Linear(2*conf.embedding_dim, conf.hidden_size)
+
+        self.linear = nn.Linear(conf.word_dimension, conf.vocab_sz)
 
         # LOSS FUNCTIONS
         self.mse_loss = nn.MSELoss()
-        self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
-            conf.hidden_size, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
         
-    def forward(self, user, item, label, review_input, review_output):
+    def forward(self, review_input, review_output):
         ########################### FIRST: PREDICTING RATINGS ###########################
+        '''
         user_embed, item_embed = self.user_embedding(user), self.item_embedding(item) # (batch_size, 200)
         
         # rating prediction with mlp: 400 -> 200 -> 100 -> rating
@@ -43,23 +45,22 @@ class mrg(nn.Module):
         prediction = self.prediction_layer(z_3)
 
         rating_loss = self.mse_loss(prediction, label)
-
+        '''
         ########################### SECOND: GENERATING REVIEWS ###########################
-        h_0 = self.initial_layer(z_1).view(1, -1, conf.hidden_size)
-        c_0 = self.initial_layer(z_1).view(1, -1, conf.hidden_size)
-        hidden_state = (h_0, c_0)
+        #h_0 = self.initial_layer(z_1).view(1, -1, conf.hidden_size)
 
         review_input_embed = self.word_embedding(review_input) #size: (sequence_length * batch_size * self.conf.text_word_dimension)
         #import pdb; pdb.set_trace()
-        lstm_input = torch.cat([review_input_embed, z_3.repeat(review_input_embed.shape[0], 1, 1)], 2)
+        #lstm_input = torch.cat([review_input_embed, z_3.repeat(review_input_embed.shape[0], 1, 1)], 2)
+        lstm_input = review_input_embed
 
-        outputs, hidden_state = self.rnn(lstm_input, hidden_state) # sequence_length * batch_size * hidden_size
+        outputs, h_n = self.rnn(lstm_input) # sequence_length * batch_size * hidden_size
         review_output_embed = outputs.view(-1, outputs.size()[2])#[sequence_length * batch_size, hidden_size]
-        #review_output_embed = outputs
 
-        softmax_out = self.softmax_loss(review_output_embed, review_output.view(-1))
-        word_probit = torch.exp(softmax_out.output)
-        
-        obj_loss = rating_loss + softmax_out.loss 
+        Pwt = torch.tanh(self.linear(review_output_embed))
+        #import pdb; pdb.set_trace()
 
-        return prediction, rating_loss, softmax_out.loss, obj_loss
+        #obj_loss = rating_loss + softmax_out.loss 
+        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.view(-1), reduction='mean')
+
+        return obj_loss
