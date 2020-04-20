@@ -23,8 +23,8 @@ class mrg(nn.Module):
 
         # PARAMETERS FOR LSTM
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
-        self.rnn = nn.GRU(conf.word_dimension + int(conf.embedding_dim / 2), conf.hidden_size, num_layers=1, dropout=0.4)
-        #self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1, dropout=0.4)
+        #self.rnn = nn.GRU(conf.word_dimension + int(conf.embedding_dim / 2), conf.hidden_size, num_layers=1, dropout=0.4)
+        self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1, dropout=0.4)
         self.initial_layer = nn.Linear(2*conf.embedding_dim, conf.hidden_size)
 
         self.linear = nn.Linear(conf.word_dimension, conf.vocab_sz)
@@ -50,10 +50,10 @@ class mrg(nn.Module):
 
         review_input_embed = self.word_embedding(review_input) #size: (sequence_length * batch_size * self.conf.text_word_dimension)
         #import pdb; pdb.set_trace()
-        lstm_input = torch.cat([review_input_embed, z_3.repeat(review_input_embed.shape[0], 1, 1)], 2)
-        #lstm_input = review_input_embed
+        #lstm_input = torch.cat([review_input_embed, z_3.repeat(review_input_embed.shape[0], 1, 1)], 2)
+        lstm_input = review_input_embed
 
-        outputs, h_n = self.rnn(lstm_input) # sequence_length * batch_size * hidden_size
+        outputs, h_n = self.rnn(lstm_input, h_0) # sequence_length * batch_size * hidden_size
         review_output_embed = outputs.view(-1, outputs.size()[2])#[sequence_length * batch_size, hidden_size]
 
         Pwt = torch.tanh(self.linear(review_output_embed))
