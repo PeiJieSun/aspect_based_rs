@@ -30,6 +30,8 @@ class expansion_net(nn.Module):
         self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
         self.linear_4 = nn.Linear(conf.n+conf.m, 1)
 
+        self.linear_5 = nn.Linear(conf.n+conf.m, conf.vocab_sz)
+
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
             conf.n+conf.m, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
@@ -81,15 +83,13 @@ class expansion_net(nn.Module):
         a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
 
         ############################### Pv(Wt) #########################################
-        PvWt = self.softmax_loss.log_prob(torch.cat([review_output_embed, a2t], 1)) # (seq_length*batch_size, vocab_sz)
+        PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed, a2t], 1))) # (seq_length*batch_size, vocab_sz)
 
         ############################### P(Wt) #########################################
         aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
         aspect_probit = F.log_softmax(aspect_probit, 1)
 
         Pwt = PvWt# + aspect_probit
-        obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
+        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.view(-1), reduction='mean')
 
-        out_loss = F.nll_loss(PvWt, review_output.view(-1), reduction='mean')
-        #import pdb; pdb.set_trace()
         return obj_loss, out_loss
