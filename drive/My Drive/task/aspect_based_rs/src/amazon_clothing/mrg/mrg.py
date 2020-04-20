@@ -42,7 +42,8 @@ class mrg(nn.Module):
         z_3 = F.tanh(self.mlp_2(z_2)) # (batch_size, embedding_dim)
 
         prediction = self.prediction_layer(z_3)
-        rating_loss = self.mse_loss(prediction, label.view(-1))
+
+        rating_loss = self.mse_loss(prediction.view(-1), label)
         
         ########################### SECOND: GENERATING REVIEWS ###########################
         h_0 = self.initial_layer(z_1).view(1, -1, conf.hidden_size)  #(1, batch_size, hidden_size)
@@ -61,5 +62,5 @@ class mrg(nn.Module):
 
         #import pdb; pdb.set_trace()
         
-        obj_loss = rating_loss + generation_loss
+        obj_loss = rating_loss# + generation_loss
         return prediction, rating_loss, generation_loss, obj_loss

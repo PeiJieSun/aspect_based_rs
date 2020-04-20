@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_mrg_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_mrg_id_07.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_mrg_id_07.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_mrg_id_08.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_mrg_id_08.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)

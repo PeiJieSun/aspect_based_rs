@@ -12,7 +12,7 @@ num_items = 23034
 
 learning_rate = 1e-3
 
-train_epochs = 15
+train_epochs = 30
 
 sequence_length = 31
 
