@@ -74,42 +74,61 @@ if __name__ == '__main__':
         t0 = time()
         model.train()
         
-        train_loss = []
+        train_rating_loss, train_generation_loss, train_prediction = [], [], []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, review_output)
-            train_loss.extend([generation_loss.item()]*len(batch_idx_list))
-            model.zero_grad(); generation_loss.backward(); optimizer.step()
+            prediction, rating_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
+            
+            train_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
+            train_generation_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            train_prediction.extend(tensorToScalar(prediction))
+
+            model.zero_grad(); obj_loss.backward(); optimizer.step()
         t2 = time()
 
         # evaluate the performance of the model with following xxx 
         model.eval()
         
-        val_loss = []
+        val_rating_loss, val_generation_loss, val_prediction = [], [], []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, review_output)
-            val_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            prediction, rating_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
+            
+            val_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
+            val_generation_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            val_prediction.extend(tensorToScalar(prediction))
+
         t2 = time()
 
-        test_loss = []
+        test_rating_loss, test_generation_loss, test_prediction = [], [], []
         for batch_idx_list in test_batch_sampler:
             user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, review_output)
-            test_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            prediction, rating_loss, generation_loss, obj_loss = model(user, item, label, review_input, review_output)
+            
+            test_rating_loss.extend([rating_loss.item()]*len(batch_idx_list))
+            test_generation_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            test_prediction.extend(tensorToScalar(prediction))
+
         t3 = time()
         
-        train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
+        train_rating_loss, val_rating_loss, test_rating_loss =\
+            np.mean(train_rating_loss), np.mean(val_rating_loss), np.mean(test_rating_loss)
+        train_generation_loss, val_generation_loss, test_generation_loss =\
+            np.mean(train_generation_loss), np.mean(val_generation_loss), np.mean(test_generation_loss)
 
         if epoch == 1:
-            min_loss = val_loss
-        if val_loss <= min_loss:
+            min_loss = val_rating_loss
+        if val_rating_loss <= min_loss:
             torch.save(model.state_dict(), train_model_path)
             best_epoch = epoch
-        min_loss = min(min_loss, val_loss)
+        min_loss = min(min_loss, val_rating_loss)
         
         log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
-        log.record('Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_loss, val_loss, test_loss))
+        log.record('Review generation: Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_rating_loss, val_rating_loss, test_rating_loss))
+        log.record('Rating prediction: Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_generation_loss, val_generation_loss, test_generation_loss))
+        log.record('train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
+        log.record('val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
+        log.record('test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
         #import sys; sys.exit(0)
     print("----"*20)
