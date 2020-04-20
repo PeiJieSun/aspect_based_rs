@@ -16,6 +16,8 @@ class seq2seq(nn.Module):
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
         self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1, dropout=0.4)
 
+        self.linear = nn.Linear(conf.word_dimension, conf.vocab_sz)
+
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
             conf.hidden_size, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
@@ -27,7 +29,9 @@ class seq2seq(nn.Module):
         outputs, h_n = self.rnn(review_input_embed, h_0) # (sequence_length, batch_size, hidden_size)
         review_output_embed = outputs.view(-1, outputs.size()[2])# (sequence_length, batch_size, hidden_size)
         
-        Pwt = self.softmax_loss.log_prob(review_output_embed)
-        obj_loss = F.nll_loss(Pwt, review_output.view(-1), reduction='mean')
+        #Pwt = self.softmax_loss.log_prob(review_output_embed)
+        Pwt = torch.tanh(self.linear(review_output_embed))
+
+        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.view(-1), reduction='mean')
         
         return obj_loss
