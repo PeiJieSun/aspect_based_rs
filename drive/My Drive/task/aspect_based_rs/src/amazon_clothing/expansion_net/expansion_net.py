@@ -54,7 +54,7 @@ class expansion_net(nn.Module):
 
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
 
-        outputs, h_n = self.rnn(review_input_embed) # (seq_length, batch_size, hidden_size=n)
+        outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
         
         # calculate a2t
