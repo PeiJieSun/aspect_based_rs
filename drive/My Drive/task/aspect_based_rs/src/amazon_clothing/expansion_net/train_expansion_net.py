@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_expansion_net_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_expansion_net_id_05.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_expansion_net_id_05.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_expansion_net_id_06.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_expansion_net_id_06.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -84,9 +84,9 @@ if __name__ == '__main__':
         train_loss = []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss, out_loss = model(user, item, label, review_input, \
+            generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
-            train_loss.extend([out_loss.item()]*len(batch_idx_list))
+            train_loss.extend([generation_loss.item()]*len(batch_idx_list))
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
 
@@ -96,17 +96,17 @@ if __name__ == '__main__':
         val_loss = []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss, out_loss = model(user, item, label, review_input, \
+            generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
-            val_loss.extend([out_loss.item()]*len(batch_idx_list))
+            val_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
             user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss, out_loss = model(user, item, label, review_input, \
+            generation_loss = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
-            test_loss.extend([out_loss.item()]*len(batch_idx_list))
+            test_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t3 = time()
         
         train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
