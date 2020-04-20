@@ -88,7 +88,7 @@ class expansion_net(nn.Module):
 
         ############################### P(Wt) #########################################
         aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
-        aspect_probit = F.log_softmax(aspect_probit, 1)
+        #aspect_probit = F.log_softmax(aspect_probit, 1)
 
         PvWt = torch.tanh(self.linear_6(review_output_embed))
         Pwt = PvWt + aspect_probit
