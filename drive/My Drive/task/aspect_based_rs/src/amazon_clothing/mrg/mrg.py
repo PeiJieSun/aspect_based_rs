@@ -47,12 +47,12 @@ class mrg(nn.Module):
         ########################### SECOND: GENERATING REVIEWS ###########################
         h_0 = self.initial_layer(z_1).view(1, -1, conf.hidden_size)  #(1, batch_size, hidden_size)
 
-        review_input_embed = self.word_embedding(review_input, h_0) #size: (sequence_length * batch_size * self.conf.text_word_dimension)
+        review_input_embed = self.word_embedding(review_input) #size: (sequence_length * batch_size * self.conf.text_word_dimension)
         #import pdb; pdb.set_trace()
         #lstm_input = torch.cat([review_input_embed, z_3.repeat(review_input_embed.shape[0], 1, 1)], 2)
         lstm_input = review_input_embed
 
-        outputs, h_n = self.rnn(lstm_input) # sequence_length * batch_size * hidden_size
+        outputs, h_n = self.rnn(lstm_input, h_0) # sequence_length * batch_size * hidden_size
         review_output_embed = outputs.view(-1, outputs.size()[2])#[sequence_length * batch_size, hidden_size]
 
         Pwt = torch.tanh(self.linear(review_output_embed))
