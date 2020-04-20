@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_mrg_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_mrg_id_01.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_mrg_id_01.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_mrg_id_02.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_mrg_id_02.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -76,8 +76,8 @@ if __name__ == '__main__':
         
         train_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, review_output)
             train_loss.extend([generation_loss.item()]*len(batch_idx_list))
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
@@ -87,15 +87,15 @@ if __name__ == '__main__':
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, review_output)
             val_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            _, _, _, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
+            user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
+            generation_loss = model(user, item, label, review_input, review_output)
             test_loss.extend([generation_loss.item()]*len(batch_idx_list))
         t3 = time()
         
