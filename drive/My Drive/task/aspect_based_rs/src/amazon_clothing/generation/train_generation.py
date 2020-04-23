@@ -79,11 +79,11 @@ if __name__ == '__main__':
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
 
-        train_dataset.construct_aspect_voab()
+        train_dataset.construct_aspect_voab(model)
         aspect_count = train_dataset.count_aspect_words()
         log.record('The number of the words which are aspect words is:%d' % aspect_count)
 
-        review_aspect, review_aspect_bool = train_dataset.construct_aspect_voab()
+        review_aspect, review_aspect_bool = train_dataset.construct_aspect_voab(model)
 
         model.train()
 
