@@ -166,11 +166,11 @@ class generation(nn.Module):
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
 
-        #beta_u = self.beta_user_embedding(user) # (batch_size, k)
-        #beta_i = self.beta_item_embedding(item) # (batch_size, k)
+        beta_u = self.beta_user_embedding(user) # (batch_size, k)
+        beta_i = self.beta_item_embedding(item) # (batch_size, k)
 
-        beta_u = self.aspect_user_embed
-        beta_i = self.aspect_item_embed
+        #beta_u = self.aspect_user_embed
+        #beta_i = self.aspect_item_embed
 
         u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
@@ -233,7 +233,7 @@ class generation(nn.Module):
         generation_loss = self.generate_review(user, item, label, \
             review_input, review_output, review_aspect, review_aspect_bool)
 
-        obj_loss = obj_loss + generation_loss
+        obj_loss = obj_loss + 0.9*generation_loss
         return obj_loss, rating_loss, abae_out_loss, prediction, generation_loss
 
         '''
