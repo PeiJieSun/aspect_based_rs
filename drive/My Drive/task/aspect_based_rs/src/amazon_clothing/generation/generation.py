@@ -233,7 +233,7 @@ class generation(nn.Module):
         generation_loss = self.generate_review(user, item, label, \
             review_input, review_output, review_aspect, review_aspect_bool)
 
-        obj_loss = obj_loss + 0.5*generation_loss
+        obj_loss = obj_loss + 0.2*generation_loss
         return obj_loss, rating_loss, abae_out_loss, prediction, generation_loss
 
         '''
