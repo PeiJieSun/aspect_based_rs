@@ -144,12 +144,14 @@ class TrainData():
     def construct_aspect_voab(self, model):
         aspect_vocab = {}
 
-        #aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
-        #c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
-        #x = aspect_params['word_embedding.weight'] # (num_words, word_dimension)
+        aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_abae_id_01.mod')
+        c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
+        x = aspect_params['word_embedding.weight'] # (num_words, word_dimension)
 
+        '''
         c = model.transform_T.weight.transpose(0, 1)
         x = model.word_embedding.weight
+        '''
 
         x_i = F.normalize(x[:, None, :], p=2, dim=2) # (num_words, 1, word_dimension)
         c_j = F.normalize(c[None, :, :], p=2, dim=2) # (1, aspect_dimesion, word_dimension)

@@ -131,12 +131,13 @@ class generation(nn.Module):
         #item_aspect_embed = torch.sum(torch.matmul(user_aspect_embed.view(label.shape[0], -1, 1), \
         #    item_aspect_embed.view(label.shape[0], 1, -1)), 2)
         
-        #import pdb; pdb.set_trace()
+        self.aspect_user_embed = user_aspect_embed
+        self.aspect_item_embed = item_aspect_embed
 
-        user_aspect_embed = user_aspect_embed + self.free_user_embedding(user)
-        item_aspect_embed = item_aspect_embed + self.free_item_embedding(item)
+        x_user_aspect_embed = user_aspect_embed + self.free_user_embedding(user)
+        x_item_aspect_embed = item_aspect_embed + self.free_item_embedding(item)
 
-        input_vec = torch.cat([user_aspect_embed, item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
+        input_vec = torch.cat([x_user_aspect_embed, x_item_aspect_embed], 1) # (batch_size, 2*xx_dimension)
         input_vec = self.user_fc_linear(input_vec)
         input_vec = self.dropout(input_vec)
 
@@ -165,8 +166,11 @@ class generation(nn.Module):
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
 
-        beta_u = self.beta_user_embedding(user) # (batch_size, k)
-        beta_i = self.beta_item_embedding(item) # (batch_size, k)
+        #beta_u = self.beta_user_embedding(user) # (batch_size, k)
+        #beta_i = self.beta_item_embedding(item) # (batch_size, k)
+
+        beta_u = self.aspect_user_embed
+        beta_i = self.aspect_item_embed
 
         u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
