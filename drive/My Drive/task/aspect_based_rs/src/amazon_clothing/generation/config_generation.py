@@ -29,7 +29,7 @@ max_review_len = 41
 num_negative_reviews = 1
 
 hidden_size = 200
-m = 64; n = 200; k = 20
+m = 20; n = 200; k = 20
 sequence_length = 31
 
 root_path = '/content/drive/My Drive/task/aspect_based_rs'
