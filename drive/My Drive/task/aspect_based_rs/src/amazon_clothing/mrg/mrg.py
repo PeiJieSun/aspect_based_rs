@@ -62,5 +62,5 @@ class mrg(nn.Module):
 
         #import pdb; pdb.set_trace()
         
-        obj_loss = rating_loss# + generation_loss
+        obj_loss = rating_loss + generation_loss
         return prediction, rating_loss, generation_loss, obj_loss

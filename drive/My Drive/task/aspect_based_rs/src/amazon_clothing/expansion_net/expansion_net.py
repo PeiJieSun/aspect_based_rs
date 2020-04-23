@@ -14,6 +14,8 @@ class expansion_net(nn.Module):
 
         # PARAMETERS FOR LSTM
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
+        self.word_embedding.weight.requires_grad = False
+        
         self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1)
 
         self.gamma_user_embedding = nn.Embedding(conf.num_users, conf.m)
