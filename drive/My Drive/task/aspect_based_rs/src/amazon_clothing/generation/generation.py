@@ -41,7 +41,7 @@ class generation(nn.Module):
         # PARAMETERS FOR LSTM
         self.rnn = nn.GRU(conf.word_dimension, conf.hidden_size, num_layers=1)
 
-        #self.gamma_user_embedding = nn.Embedding(conf.num_users, conf.m)
+        self.gamma_user_embedding = nn.Embedding(conf.num_users, conf.m)
         self.gamma_item_embedding = nn.Embedding(conf.num_items, conf.m)
 
         self.beta_user_embedding = nn.Embedding(conf.num_users, conf.k)
@@ -163,8 +163,8 @@ class generation(nn.Module):
     def generate_review(self, user, item, label, review_input, review_output, \
         review_aspect, review_aspect_bool):
         ########################### FIRST: GET THE ASPECT-BASED REVIEW EMBEDDING ##########################
-        gamma_u = self.free_user_embedding(user) # (batch_size, m)
-        gamma_i = self.free_item_embedding(item) # (batch_size, m)
+        gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
+        gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
 
         beta_u = self.beta_user_embedding(user) # (batch_size, k)
         beta_i = self.beta_item_embedding(item) # (batch_size, k)
@@ -233,7 +233,7 @@ class generation(nn.Module):
         generation_loss = self.generate_review(user, item, label, \
             review_input, review_output, review_aspect, review_aspect_bool)
 
-        obj_loss = obj_loss + 0.1*generation_loss
+        obj_loss = obj_loss + generation_loss
         return obj_loss, rating_loss, abae_out_loss, prediction, generation_loss
 
         '''
