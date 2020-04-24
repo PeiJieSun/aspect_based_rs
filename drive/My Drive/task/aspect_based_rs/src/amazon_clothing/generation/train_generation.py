@@ -60,7 +60,7 @@ if __name__ == '__main__':
     
 
     ########################### FIRST TRAINING #####################################
-    check_idx = '07'
+    check_idx = '11'
     check_dir('%s/train_%s_aspect_generation_id_x.log' % (conf.out_path, conf.data_name))
     log = Logging('%s/train_%s_aspect_generation_id_%s.py' % (conf.out_path, conf.data_name, check_idx))
     train_model_path = '%s/train_%s_aspect_generation_id_%s.mod' % (conf.out_path, conf.data_name, check_idx)
@@ -115,7 +115,7 @@ if __name__ == '__main__':
             model.zero_grad(); obj.backward(); optimizer.step()
 
         t1 = time()
-        
+
         scheduler.step(epoch)
         
         # evaluate the performance of the model with following code
@@ -188,6 +188,9 @@ if __name__ == '__main__':
             review_best_epoch = epoch
         min_rating_loss = min(val_rating_rmse, min_rating_loss)
         min_review_loss = min(val_generation_loss, min_review_loss)
+
+
+        print(torch.mean(model.gamma_item_embedding.weight))
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('ABAE loss:{:.4f}'.format(np.mean(train_abae_loss)))
