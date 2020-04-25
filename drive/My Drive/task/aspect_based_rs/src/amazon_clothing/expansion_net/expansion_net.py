@@ -55,7 +55,7 @@ class expansion_net(nn.Module):
         u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
 
-        h_0 = (u_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
+        h_0 = (v_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
 
         outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
