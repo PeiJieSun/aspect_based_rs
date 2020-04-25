@@ -29,10 +29,10 @@ class expansion_net(nn.Module):
 
         self.linear_1 = nn.Linear(conf.m + conf.n, 1)
         self.linear_2 = nn.Linear(2*conf.k, conf.k)
-        self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
+        self.linear_3 = nn.Linear(conf.word_dimension+conf.n, conf.k)
         self.linear_4 = nn.Linear(conf.n+conf.m, 1)
 
-        self.linear_5 = nn.Linear(conf.n+conf.m, conf.vocab_sz)
+        self.linear_5 = nn.Linear(conf.n, conf.vocab_sz)
 
         self.linear_6 = nn.Linear(conf.n, conf.vocab_sz)
 
@@ -45,19 +45,11 @@ class expansion_net(nn.Module):
         ########################### FIRST: GET THE ASPECT-BASED REVIEW EMBEDDING ##########################
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
-        
-        gamma_u = F.normalize(gamma_u, dim=1)
-        gamma_i = F.normalize(gamma_i, dim=1)
-
 
         beta_u = self.beta_user_embedding(user) # (batch_size, k)
         beta_i = self.beta_item_embedding(item) # (batch_size, k)
 
-        beta_u = F.normalize(beta_u, dim=1)
-        beta_i = F.normalize(beta_i, dim=1)
-
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
-        review_input_embed = F.normalize(review_input_embed, dim=2)
 
         u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
@@ -66,7 +58,6 @@ class expansion_net(nn.Module):
 
         outputs, h_n = self.rnn(review_input_embed) # (seq_length, batch_size, hidden_size=n)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
-        review_output_embed = F.normalize(review_input_embed, dim=1)
 
         # calculate a2t
         # gamma_u.repeat(outputs.shape[0], 1): (seq_length*batch_size, m)
@@ -92,7 +83,9 @@ class expansion_net(nn.Module):
 
         # sui.repeat(outputs.shape[0]): (seq_length*batch_size, k)
         # torch.cat([sui.repeat(outputs.shape[0]), review_input_embed, review_output_embed], 1): (seq_length*batch_size, k+word_dim+n)
-        a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
+        #a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
+        a3t = torch.tanh(self.linear_3(torch.cat((review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
+
 
         ############################### Pv(Wt) #########################################
         #PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed, a2t], 1))) # (seq_length*batch_size, vocab_sz)
