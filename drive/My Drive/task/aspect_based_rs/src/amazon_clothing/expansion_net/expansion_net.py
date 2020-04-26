@@ -37,6 +37,9 @@ class expansion_net(nn.Module):
 
         self.linear_6 = nn.Linear(conf.n, conf.vocab_sz)
 
+        self.bn_gamma = nn.BatchNorm1d(conf.m)
+        self.bn_beta = nn.BatchNorm1d(conf.k)
+
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
             conf.n+conf.m, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
@@ -47,14 +50,16 @@ class expansion_net(nn.Module):
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
 
-        gamma_u = F.normalize(gamma_u, dim=1)
-        gamma_i = F.normalize(gamma_i, dim=1)
+        gamma_u = self.bn_gamma(gamma_u)
+        gamma_i = self.bn_gamma(gamma_i)
 
         beta_u = self.beta_user_embedding(user) # (batch_size, k)
         beta_i = self.beta_item_embedding(item) # (batch_size, k)
 
-        beta_u = F.normalize(beta_u, dim=1)
-        beta_i = F.normalize(beta_i, dim=1)
+        beta_u = self.bn_beta(beta_u)
+        beta_i = self.bn_beta(beta_i)
+
+        #import pdb; pdb.set_trace()
 
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
 
