@@ -123,6 +123,6 @@ if __name__ == '__main__':
         log.record('Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_loss, val_loss, test_loss))
 
         #import sys; sys.exit(0)
-    print("----"*20)
-    print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
-    print("----"*20)
+    log.record("----"*20)
+    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record("----"*20)
