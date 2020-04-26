@@ -37,8 +37,8 @@ class expansion_net(nn.Module):
 
         self.linear_6 = nn.Linear(conf.n, conf.vocab_sz)
 
-        self.bn_gamma = nn.BatchNorm1d(conf.m)
-        self.bn_beta = nn.BatchNorm1d(conf.k)
+        self.bn_gamma = nn.BatchNorm1d(conf.m, affine=False)
+        self.bn_beta = nn.BatchNorm1d(conf.k, affine=False)
 
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
