@@ -29,8 +29,8 @@ class expansion_net(nn.Module):
 
         self.linear_1 = nn.Linear(conf.m + conf.n, 1)
         self.linear_2 = nn.Linear(2*conf.k, conf.k)
-        #self.linear_3 = nn.Linear(conf.word_dimension+conf.n, conf.k)
-        self.linear_3 = nn.Linear(conf.k, conf.k)
+        #self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
+        self.linear_3 = nn.Linear(conf.word_dimension, conf.k)
         self.linear_4 = nn.Linear(conf.n+conf.m, 1)
 
         self.linear_5 = nn.Linear(conf.n, conf.vocab_sz)
@@ -102,7 +102,7 @@ class expansion_net(nn.Module):
         #a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
         #a3t = torch.tanh(self.linear_3(torch.cat((review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
         #a3t = torch.tanh(self.linear_3(sui.repeat(outputs.shape[0], 1))) # (seq_length*batch_size, k)
-        a3t = self.linear_3(sui.repeat(outputs.shape[0], 1)) # (seq_length*batch_size, k)
+        a3t = self.linear_3(review_input_embed.view(-1, conf.word_dimension)) # (seq_length*batch_size, k)
 
         ############################### Pv(Wt) #########################################
         #PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed, a2t], 1))) # (seq_length*batch_size, vocab_sz)
