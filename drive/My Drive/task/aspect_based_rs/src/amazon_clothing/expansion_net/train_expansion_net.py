@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # load word embedding from pretrained word2vec model
     model_params = model.state_dict()
-    
+
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -41,9 +41,8 @@ if __name__ == '__main__':
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
 
     model.load_state_dict(model_params)
-    
 
-    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_expansion_net_id_18.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_expansion_net_id_26.mod'))
     model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
@@ -58,8 +57,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_expansion_net_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_expansion_net_id_28.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_expansion_net_id_28.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_expansion_net_id_29.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_expansion_net_id_29.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)

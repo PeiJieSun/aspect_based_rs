@@ -52,10 +52,14 @@ class expansion_net(nn.Module):
 
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
 
+        '''
         u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
         v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
+        '''
 
-        h_0 = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
+        u_vector = self.u_linear(torch.cat([gamma_u, gamma_i], 1))
+
+        h_0 = (u_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
 
         outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
@@ -86,8 +90,8 @@ class expansion_net(nn.Module):
         # torch.cat([sui.repeat(outputs.shape[0]), review_input_embed, review_output_embed], 1): (seq_length*batch_size, k+word_dim+n)
         #a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
         #a3t = torch.tanh(self.linear_3(torch.cat((review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
-        a3t = torch.tanh(self.linear_3(sui.repeat(outputs.shape[0], 1))) # (seq_length*batch_size, k)
-
+        #a3t = torch.tanh(self.linear_3(sui.repeat(outputs.shape[0], 1))) # (seq_length*batch_size, k)
+        a3t = self.linear_3(sui.repeat(outputs.shape[0], 1)) # (seq_length*batch_size, k)
 
         ############################### Pv(Wt) #########################################
         #PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed, a2t], 1))) # (seq_length*batch_size, vocab_sz)
@@ -98,6 +102,7 @@ class expansion_net(nn.Module):
         aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
         #aspect_probit = F.log_softmax(aspect_probit, 1)
 
+        #import pdb; pdb.set_trace()
         #PvWt = torch.tanh(self.linear_6(review_output_embed))
         Pwt = PvWt + aspect_probit
         obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.view(-1), reduction='mean')
