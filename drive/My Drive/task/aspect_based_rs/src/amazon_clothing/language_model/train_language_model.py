@@ -47,12 +47,12 @@ if __name__ == '__main__':
 
     model.cuda()
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_language_model_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_language_model_id_01.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_language_model_id_01.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_language_model_id_03.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_language_model_id_03.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         model.train()
 
         train_loss = []
-        for batch_idx_list in train_batch_sampler:
+        for batch_idx_list in val_batch_sampler:
             _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
             obj_loss = model(review_input, review_output)
             train_loss.extend([obj_loss.item()]*len(batch_idx_list))

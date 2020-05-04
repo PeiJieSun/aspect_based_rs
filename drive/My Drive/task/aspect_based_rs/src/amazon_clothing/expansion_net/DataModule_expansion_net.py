@@ -53,7 +53,7 @@ class TrainData():
         self.train_data = train_data
         self.length = len(train_data.keys())
 
-        self.construct_aspect_voab()
+        #self.construct_aspect_voab()
 
     def get_batch(self, batch_idx_list):
         user_list, item_list, rating_list = [], [], []

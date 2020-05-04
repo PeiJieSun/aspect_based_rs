@@ -29,52 +29,37 @@ class expansion_net(nn.Module):
 
         self.linear_1 = nn.Linear(conf.m + conf.n, 1)
         self.linear_2 = nn.Linear(2*conf.k, conf.k)
-        #self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
-        self.linear_3 = nn.Linear(conf.k, conf.k)
+        self.linear_3 = nn.Linear(conf.k+conf.word_dimension+conf.n, conf.k)
         self.linear_4 = nn.Linear(conf.n+conf.m, 1)
 
-        self.linear_5 = nn.Linear(conf.n, conf.vocab_sz)
+        self.linear_5 = nn.Linear(conf.n+conf.m, conf.vocab_sz)
 
         self.linear_6 = nn.Linear(conf.n, conf.vocab_sz)
-
-        self.bn_gamma = nn.BatchNorm1d(conf.m, affine=False)
-        self.bn_beta = nn.BatchNorm1d(conf.k, affine=False)
 
         # LOSS FUNCTIONS
         self.softmax_loss = nn.AdaptiveLogSoftmaxWithLoss(\
             conf.n+conf.m, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
         
-    def forward(self, user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool):        
+    def forward_1(self, user, item, label, review_input, review_output, review_aspect, \
+                review_aspect_bool):
         ########################### FIRST: GET THE ASPECT-BASED REVIEW EMBEDDING ##########################
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
 
-        gamma_u = self.bn_gamma(gamma_u)
-        gamma_i = self.bn_gamma(gamma_i)
-
         beta_u = self.beta_user_embedding(user) # (batch_size, k)
         beta_i = self.beta_item_embedding(item) # (batch_size, k)
 
-        beta_u = self.bn_beta(beta_u)
-        beta_i = self.bn_beta(beta_i)
+        u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
+        v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
 
-        #import pdb; pdb.set_trace()
+        h_0 = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
 
         review_input_embed = self.word_embedding(review_input)# (seq_length, batch_size, word_dimension)
 
-        '''
-        u_vector = torch.tanh(self.u_linear(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, n)
-        v_vector = torch.tanh(self.v_linear(torch.cat([beta_u, beta_i], 1))) # (batch_size, n)
-        '''
-
-        u_vector = self.u_linear(torch.cat([gamma_u, gamma_i], 1))
-
-        h_0 = (u_vector).view(1, user.shape[0], conf.hidden_size) # (1 * 1, batch_size, hidden_size=n)
-
-        outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
+        #outputs, h_n = self.rnn(review_input_embed, h_0) # (seq_length, batch_size, hidden_size=n)
+        outputs, h_n = self.rnn(review_input_embed)
         review_output_embed = outputs.view(-1, outputs.size()[2])#(seq_length * batch_size, hidden_size=n)
-
+        
         # calculate a2t
         # gamma_u.repeat(outputs.shape[0], 1): (seq_length*batch_size, m)
         # torch.cat([gamma_u, review_output_embed], 1): (seq_length*batch_size, m+n)
@@ -90,7 +75,7 @@ class expansion_net(nn.Module):
 
         # gamma_u.view(1, user.shape[0], -1): (1, batch_size, m)
         # gamma_i.view(1, user.shape[0], -1): (1, batch_size, m)
-        #a2t = alpha_tu * gamma_u.repeat(outputs.shape[0], 1) + alpha_ti * gamma_i.repeat(outputs.shape[0], 1) # (seq_length * batch_size, m)
+        a2t = alpha_tu * gamma_u.repeat(outputs.shape[0], 1) + alpha_ti * gamma_i.repeat(outputs.shape[0], 1) # (seq_length * batch_size, m)
         #import pdb; pdb.set_trace()
 
         # calculate a3t
@@ -99,28 +84,27 @@ class expansion_net(nn.Module):
 
         # sui.repeat(outputs.shape[0]): (seq_length*batch_size, k)
         # torch.cat([sui.repeat(outputs.shape[0]), review_input_embed, review_output_embed], 1): (seq_length*batch_size, k+word_dim+n)
-        #a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
-        #a3t = torch.tanh(self.linear_3(torch.cat((review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
-        a3t = torch.tanh(self.linear_3(sui.repeat(outputs.shape[0], 1))) # (seq_length*batch_size, k)
+        a3t = torch.tanh(self.linear_3(torch.cat((sui.repeat(outputs.shape[0], 1), review_input_embed.view(-1, conf.word_dimension), review_output_embed), 1))) # (seq_length*batch_size, k)
 
         ############################### Pv(Wt) #########################################
         #PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed, a2t], 1))) # (seq_length*batch_size, vocab_sz)
-        PvWt = torch.tanh(self.linear_5(torch.cat([review_output_embed], 1))) # (seq_length*batch_size, vocab_sz)
-        #import pdb; pdb.set_trace()
 
-        ############################### P(Wt) ######################################### 
-        aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
+        ############################### P(Wt) #########################################
+        #aspect_probit = torch.index_select(a3t, 1, review_aspect) * review_aspect_bool # (seq_length*batch_size, vocab_sz)
         #aspect_probit = F.log_softmax(aspect_probit, 1)
 
-        #import pdb; pdb.set_trace()
-        #PvWt = torch.tanh(self.linear_6(review_output_embed))
-        Pwt = PvWt + aspect_probit
-
-        #import pdb; pdb.set_trace()
+        PvWt = torch.tanh(self.linear_6(review_output_embed))
+        Pwt = PvWt# + aspect_probit
         obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.reshape(-1), reduction='mean')
-        #import pdb; pdb.set_trace()
-        return obj_loss
 
-    def generation(self, user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool):
-        
+        return obj_loss, review_output.transpose(0, 1), torch.argmax(Pwt, dim=1).reshape(-1, review_output.shape[1]).transpose(0, 1)
+    
+    def forward(self, user, item, label, review_input, review_output, review_aspect, \
+            review_aspect_bool):
+        review_input_embed = self.word_embedding(review_input) #size: (sequence_length * batch_size) * self.conf.text_word_dimension
+        outputs, _ = self.rnn(review_input_embed) # sequence_length * batch_size * hidden_dimension
+        review_output_embed = outputs.view(-1, outputs.size()[2])#[sequence_length * batch_size, hidden_dimension]
+        Pwt = torch.tanh(self.linear_6(torch.cat([review_output_embed], 1)))
+
+        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.reshape(-1), reduction='mean')
+        return obj_loss, review_output.transpose(0, 1), torch.argmax(Pwt, dim=1).reshape(-1, review_output.shape[1]).transpose(0, 1)
