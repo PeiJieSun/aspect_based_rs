@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
         train_loss = []
         train_ref, train_hyp = [], []
-        for batch_idx_list in val_batch_sampler:
+        for batch_idx_list in train_batch_sampler:
             user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
             generation_loss, batch_ref, batch_hyp = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)

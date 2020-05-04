@@ -119,4 +119,8 @@ class expansion_net(nn.Module):
         #import pdb; pdb.set_trace()
         obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.reshape(-1), reduction='mean')
         #import pdb; pdb.set_trace()
-        return obj_loss, review_output.transpose(0, 1), torch.argmax(Pwt, dim=1).reshape(-1, review_output.shape[1]).transpose(0, 1)
+        return obj_loss
+
+    def generation(self, user, item, label, review_input, review_output, review_aspect, \
+                review_aspect_bool):
+        
