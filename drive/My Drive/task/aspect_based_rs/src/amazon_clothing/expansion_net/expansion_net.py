@@ -45,7 +45,7 @@ class expansion_net(nn.Module):
             conf.n+conf.m, conf.vocab_sz, cutoffs=[round(conf.vocab_sz/15), 3*round(conf.vocab_sz/15)], div_value=2)
         
     def forward(self, user, item, label, review_input, review_output, review_aspect, \
-                review_aspect_bool):
+                review_aspect_bool):        
         ########################### FIRST: GET THE ASPECT-BASED REVIEW EMBEDDING ##########################
         gamma_u = self.gamma_user_embedding(user) # (batch_size, m)
         gamma_i = self.gamma_item_embedding(item) # (batch_size, m)
@@ -115,6 +115,8 @@ class expansion_net(nn.Module):
         #import pdb; pdb.set_trace()
         #PvWt = torch.tanh(self.linear_6(review_output_embed))
         Pwt = PvWt + aspect_probit
-        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.view(-1), reduction='mean')
 
-        return obj_loss
+        #import pdb; pdb.set_trace()
+        obj_loss = F.nll_loss(F.log_softmax(Pwt, 1), review_output.reshape(-1), reduction='mean')
+        #import pdb; pdb.set_trace()
+        return obj_loss, review_output.transpose(0, 1), torch.argmax(Pwt, dim=1).reshape(-1, review_output.shape[1]).transpose(0, 1)

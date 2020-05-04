@@ -12,6 +12,9 @@ from gensim.models import Word2Vec
 import DataModule_expansion_net as data_utils
 import config_expansion_net as conf
 
+from bleu import *
+from rouge import *
+
 from Logging import Logging
 
 def now():
@@ -25,6 +28,17 @@ def check_dir(file_path):
 
 def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
+
+def evaluate(hyp, ref):
+    #random_list = np.random.choice(len(hyp), 1000, replace=False)
+    random_list = range(1000)
+    new_hyp, new_ref = [], []
+    for index in random_list:
+        new_hyp.append(hyp[index])
+        new_ref.append(ref[index])
+
+    compute_bleu(new_hyp, [new_ref])
+    #rouge(new_hyp, new_ref)
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
@@ -57,8 +71,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_expansion_net_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_expansion_net_id_36.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_expansion_net_id_36.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_expansion_net_id_37.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_expansion_net_id_37.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -83,33 +97,48 @@ if __name__ == '__main__':
         model.train()
 
         train_loss = []
+        train_ref, train_hyp = [], []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, \
+            generation_loss, batch_ref, batch_hyp = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             train_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            train_ref.extend(tensorToScalar(batch_ref).tolist())
+            train_hyp.extend(tensorToScalar(batch_hyp).tolist())
             model.zero_grad(); generation_loss.backward(); optimizer.step()
         t2 = time()
+        
+        evaluate(train_hyp, train_ref)
 
         # evaluate the performance of the model with following xxx 
         model.eval()
         
         val_loss = []
+        val_ref, val_hyp = [], []
         for batch_idx_list in val_batch_sampler:
             user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, \
+            generation_loss, batch_ref, batch_hyp = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             val_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            val_ref.extend(tensorToScalar(batch_ref).tolist())
+            val_hyp.extend(tensorToScalar(batch_hyp).tolist())
         t2 = time()
 
+        evaluate(val_hyp, val_ref)
+
         test_loss = []
+        test_ref, test_hyp = [], []
         for batch_idx_list in test_batch_sampler:
             user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, label, review_input, \
+            generation_loss, batch_ref, batch_hyp = model(user, item, label, review_input, \
                 review_output, review_aspect, review_aspect_bool)
             test_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            test_ref.extend(tensorToScalar(batch_ref).tolist())
+            test_hyp.extend(tensorToScalar(batch_hyp).tolist())
         t3 = time()
         
+        evaluate(test_hyp, test_ref)
+
         train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
 
         if epoch == 1:
