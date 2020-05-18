@@ -1,10 +1,10 @@
 import torch
-import torch.nn.functional as F
 
 import numpy as np 
 from collections import defaultdict
 
-import config_seq2seq as conf
+import torch.utils.data as data
+import config_lm_mf as conf
 
 from copy import deepcopy
 
@@ -56,15 +56,16 @@ class TrainData():
     def get_batch(self, batch_idx_list):
         user_list, item_list, rating_list = [], [], []
         review_input_list, review_output_list = [], []
+        review_aspect_bool_list, review_aspect_list = [], []
 
         for data_idx in batch_idx_list:
-            user_list.append(self.train_data[data_idx][0])
-            item_list.append(self.train_data[data_idx][1])
-            rating_list.append(self.train_data[data_idx][2])
+            user_list.append(self.train_data[data_idx][0]) # (batch_size, 1)
+            item_list.append(self.train_data[data_idx][1]) # (batch_size, 1)
+            rating_list.append(self.train_data[data_idx][2]) # (batch_size, 1)
 
-            review_input_list.append(self.train_data[data_idx][3])
-            review_output_list.append(self.train_data[data_idx][4])
-        
+            review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
+            review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
+
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \

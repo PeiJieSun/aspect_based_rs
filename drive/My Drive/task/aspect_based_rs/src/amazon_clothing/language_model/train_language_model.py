@@ -5,7 +5,7 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
@@ -45,14 +45,15 @@ if __name__ == '__main__':
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
     model.load_state_dict(model_params)
 
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_language_model_id_0X.mod'))
     model.cuda()
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_language_model_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_language_model_id_03.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_language_model_id_03.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_language_model_id_0X.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_language_model_id_0X.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -71,8 +72,8 @@ if __name__ == '__main__':
 
         train_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            obj_loss = model(review_input, review_output)
+            user, item, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            obj_loss = model(user, item, review_input, review_output)
             train_loss.extend([obj_loss.item()]*len(batch_idx_list))
             model.zero_grad(); obj_loss.backward(); optimizer.step()
         t1 = time()
@@ -82,15 +83,15 @@ if __name__ == '__main__':
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            obj_loss = model(review_input, review_output)
+            user, item, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            obj_loss = model(user, item, review_input, review_output)
             val_loss.extend([obj_loss.item()]*len(batch_idx_list))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            obj_loss = model(review_input, review_output)
+            user, item, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            obj_loss = model(user, item, review_input, review_output)
             test_loss.extend([obj_loss.item()]*len(batch_idx_list))
         t3 = time()
 
@@ -108,5 +109,5 @@ if __name__ == '__main__':
 
         #import sys; sys.exit(0)
     log.record("----"*20)
-    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record(f"{now()} {conf.data_name} best epoch: {best_epoch}")
     log.record("----"*20)

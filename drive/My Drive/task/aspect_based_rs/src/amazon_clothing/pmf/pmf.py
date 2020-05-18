@@ -37,7 +37,7 @@ class pmf(nn.Module):
         
         #import pdb; pdb.set_trace()
         
-        prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating #+ user_bias + item_bias 
+        prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias 
 
         obj_loss = self.obj_function(prediction.view(-1), label) 
 

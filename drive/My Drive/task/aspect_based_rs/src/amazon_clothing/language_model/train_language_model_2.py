@@ -5,12 +5,12 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_expansion_net as data_utils
-import config_expansion_net as conf
+import DataModule_language_model as data_utils
+import config_language_model as conf
 
 from Logging import Logging
 
@@ -45,21 +45,22 @@ if __name__ == '__main__':
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
     model.load_state_dict(model_params)
 
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_language_model_id_0X.mod'))
     model.cuda()
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
+    optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_language_model_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_language_model_id_X.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_language_model_id_X.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_language_model_id_0X.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_language_model_id_0X.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
     val_dataset = data_utils.TrainData(val_data)
     test_dataset = data_utils.TrainData(test_data)
 
-    train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=1, drop_last=False)
     val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
     test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
@@ -70,48 +71,17 @@ if __name__ == '__main__':
         model.train()
 
         train_loss = []
-        train_ref, train_hyp = [], []
+        count = 0
         for batch_idx_list in train_batch_sampler:
-            user, item, label, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            train_loss.extend([generation_loss.item()]*len(batch_idx_list))
-            model.zero_grad(); generation_loss.backward(); optimizer.step()
-        t2 = time()
-        
+            user, item, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
+            obj_loss = model(user, item, review_input, review_output)
+            train_loss.extend([obj_loss.item()]*len(batch_idx_list))
+            model.zero_grad(); obj_loss.backward(); optimizer.step()
+            count += 1
+            if count % 1000 == 0:
+                print('current proessing:%d' % count)
+        t1 = time()
+
         # evaluate the performance of the model with following xxx 
-        model.eval()
-        
-        val_loss = []
-        val_ref, val_hyp = [], []
-        for batch_idx_list in val_batch_sampler:
-            user, item, label, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            val_loss.extend([generation_loss.item()]*len(batch_idx_list))
 
-        t2 = time()
-
-        test_loss = []
-        test_ref, test_hyp = [], []
-        for batch_idx_list in test_batch_sampler:
-            user, item, label, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            test_loss.extend([generation_loss.item()]*len(batch_idx_list))
-
-        t3 = time()
-        
-        train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
-
-        if epoch == 1:
-            min_loss = val_loss
-        if val_loss <= min_loss:
-            torch.save(model.state_dict(), train_model_path)
-            best_epoch = epoch
-        min_loss = min(min_loss, val_loss)
-        
-        log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
-        log.record('Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_loss, val_loss, test_loss))
-
-        #import sys; sys.exit(0)
-    log.record("----"*20)
-    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
-    log.record("----"*20)
+        torch.save(model.state_dict(), train_model_path)

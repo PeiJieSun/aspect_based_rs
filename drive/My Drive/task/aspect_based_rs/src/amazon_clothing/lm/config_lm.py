@@ -15,6 +15,10 @@ sequence_length = 31
 num_users = 39380
 num_items = 23034
 
+mf_dimension = 32
+
+hidden_dimension = 256
+
 aspect_dimension = 20
 
 hidden_size = 200
@@ -26,5 +30,3 @@ target_path = '%s/data/%s' % (root_path, data_name)
 out_path = '%s/out/%s' % (root_path, data_name)
 origin_file = '/content/drive/My Drive/datasets/amazon_clothing/reviews_Clothing_Shoes_and_Jewelry_5.json.gz'
 model_path = '%s/out/model' % root_path
-
-mf_dimension = 32

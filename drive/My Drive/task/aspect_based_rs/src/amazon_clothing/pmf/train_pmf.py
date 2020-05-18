@@ -39,8 +39,8 @@ if __name__ == '__main__':
     
     #model.load_state_dict(torch.load('%s/train_%s_pmf_id_adabound.mod' % (conf.model_path, conf.data_name)))
     model.cuda()
-    optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     #import adabound
     #optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1, weight_decay=conf.weight_decay)

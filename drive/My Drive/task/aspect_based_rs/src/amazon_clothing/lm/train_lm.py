@@ -5,17 +5,14 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time, strftime
+from time import time
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_seq2seq as data_utils
-import config_seq2seq as conf
+import DataModule_lm as data_utils
+import config_lm as conf
 
 from Logging import Logging
-
-def now():
-    return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
     import os
@@ -28,12 +25,9 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    from seq2seq import seq2seq
-    model = seq2seq()
-
-    # load word embedding from pretrained word2vec model
+    from lm import lm
+    model = lm()
     model_params = model.state_dict()
-
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(3):
         model_params['word_embedding.weight'][idx] = torch.zeros(conf.word_dimension)
@@ -42,10 +36,9 @@ if __name__ == '__main__':
 
     model.load_state_dict(model_params)
 
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_id_x.mod'))
     model.cuda()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
 
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
@@ -55,9 +48,9 @@ if __name__ == '__main__':
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_seq2seq_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_seq2seq_id_04.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_seq2seq_id_04.mod' % (conf.out_path, conf.data_name)
+    check_dir('%s/train_%s_lm_id_x.py' % (conf.out_path, conf.data_name))
+    log = Logging('%s/train_%s_lm_id_01.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_lm_id_01.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -73,45 +66,39 @@ if __name__ == '__main__':
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
         model.train()
-        
-        train_loss = []
-        for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            train_loss.extend([generation_loss.item()]*len(batch_idx_list))
-            model.zero_grad(); generation_loss.backward(); optimizer.step()
-        t2 = time()
 
-        # evaluate the performance of the model with following xxx 
+        train_loss = []
+        for batch_idx_list in train_batch_sampler:
+            user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
+            out_loss, obj = model(user_list, item_list, review_input_list, review_output_list)
+            train_loss.extend(tensorToScalar(out_loss))
+            model.zero_grad(); obj.backward(); optimizer.step()
+        t1 = time()
+
+        # evaluate the performance of the model with following code
         model.eval()
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            _, _, _, review_input, review_output = val_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            val_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            user_list, item_list, _, review_input_list, review_output_list = val_dataset.get_batch(batch_idx_list)
+            out_loss, _ = model(user_list, item_list, review_input_list, review_output_list)
+            val_loss.extend(tensorToScalar(out_loss))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            _, _, _, review_input, review_output = test_dataset.get_batch(batch_idx_list)
-            generation_loss = model(review_input, review_output)
-            test_loss.extend([generation_loss.item()]*len(batch_idx_list))
+            user_list, item_list, _, review_input_list, review_output_list = test_dataset.get_batch(batch_idx_list)
+            out_loss, _ = model(user_list, item_list, review_input_list, review_output_list)
+            test_loss.extend(tensorToScalar(out_loss))
         t3 = time()
-        
+
         train_loss, val_loss, test_loss = np.mean(train_loss), np.mean(val_loss), np.mean(test_loss)
 
         if epoch == 1:
             min_loss = val_loss
-        if val_loss <= min_loss:
+        if val_loss < min_loss:
             torch.save(model.state_dict(), train_model_path)
-            best_epoch = epoch
-        min_loss = min(min_loss, val_loss)
-        
-        log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
-        log.record('Train:{:.4f}, Val:{:.4f}, Test:{:.4f}'.format(train_loss, val_loss, test_loss))
+        min_loss = min(val_loss, min_loss)
 
-        #import sys; sys.exit(0)
-    print("----"*20)
-    print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
-    print("----"*20)
+        log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
+        log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
