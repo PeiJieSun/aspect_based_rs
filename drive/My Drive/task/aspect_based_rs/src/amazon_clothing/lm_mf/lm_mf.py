@@ -67,7 +67,7 @@ class lm_mf(nn.Module):
         review_obj_loss = F.cross_entropy(word_probit, review_target_list.reshape(-1))
         
         #import pdb; pdb.set_trace()
-        obj_loss = 0.9 * rating_obj_loss + 0.1 * review_obj_loss
+        obj_loss = rating_obj_loss# + 0.1 * review_obj_loss
         return rating_loss, review_loss, obj_loss
     
     def sampleTextByTemperature(self, user_list, item_list):
