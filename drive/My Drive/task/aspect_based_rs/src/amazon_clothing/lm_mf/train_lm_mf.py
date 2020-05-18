@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_lm_mf_id_x.py' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_lm_mf_id_01.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_lm_mf_id_01.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_lm_mf_id_02.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_lm_mf_id_02.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             rating_loss, review_loss, obj_loss = model(user_list, item_list, label_list, review_input_list, review_output_list)
             train_rating_loss.extend(tensorToScalar(rating_loss))
             train_review_loss.extend(tensorToScalar(review_loss))
-            model.zero_grad(); obj.backward(); optimizer.step()
+            model.zero_grad(); obj_loss.backward(); optimizer.step()
         t1 = time()
 
         # evaluate the performance of the model with following code

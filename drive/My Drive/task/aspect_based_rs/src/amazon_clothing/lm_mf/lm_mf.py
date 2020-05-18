@@ -47,7 +47,7 @@ class lm_mf(nn.Module):
                 
         prediction = torch.sum(output_emb, 1, keepdims=True) + conf.avg_rating + user_bias + item_bias 
 
-        rating_loss = F.mse_loss(prediction.view(-1), label_list)
+        rating_loss = F.mse_loss(prediction.view(-1), label_list, reduction='none')
         rating_obj_loss = F.mse_loss(prediction.view(-1), label_list)
 
         # No enough memory, more time consuming is needed.
@@ -67,8 +67,7 @@ class lm_mf(nn.Module):
         review_obj_loss = F.cross_entropy(word_probit, review_target_list.reshape(-1))
         
         #import pdb; pdb.set_trace()
-        obj_loss = rating_obj_loss + review_obj_loss
-
+        obj_loss = review_obj_loss
         return rating_loss, review_loss, obj_loss
     
     def sampleTextByTemperature(self, user_list, item_list):
