@@ -66,7 +66,7 @@ class lm_mf(nn.Module):
         review_loss = F.cross_entropy(word_probit, review_target_list.reshape(-1), reduction='none')
         review_obj_loss = F.cross_entropy(word_probit, review_target_list.reshape(-1))
         
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         obj_loss = rating_obj_loss + review_obj_loss
 
         return rating_loss, review_loss, obj_loss
