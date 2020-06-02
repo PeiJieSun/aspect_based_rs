@@ -160,7 +160,7 @@ class decoder(nn.Module):
         word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
 
         #return PvWt + aspect_probit, hidden_state
-        return word_probit + aspect_probit, hidden_state
+        return word_probit, hidden_state
 
 class expansion_net(nn.Module):
     def __init__(self):
