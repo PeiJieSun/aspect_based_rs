@@ -104,19 +104,37 @@ class encoder_abae(nn.Module):
 
         transform_T_weight = F.normalize(self.transform_T.weight, p=2, dim=0) # word_dimension * aspect_dimension
         U_loss = mse_loss(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.asp_dim).cuda())
-        return c1, c2, out_loss, conf.lr_lambda * U_loss + J_loss
+        return c1, c2, out_loss, U_loss, J_loss
 
 class decoder_fm(nn.Module):
     def __init__(self):
         super(decoder, self).__init__()
 
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)  # user/item num * 32
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
+
+        # ---------------------------fc_linear------------------------------
+        self.fc = nn.Linear(dim, 1)
+        # ------------------------------FM----------------------------------
+        self.fm_V = nn.Parameter(torch.randn(dim, 10))
+        self.b_users = nn.Embedding(conf.num_users, 1)
+        self.b_items = nn.Embedding(conf.num_items, 1)
+
         self.reinit()
 
     def reinit(self):
+        nn.init.xavier_normal_(self.free_user_embedding.weight)
+        nn.init.xavier_normal_(self.free_item_embedding.weight)
 
-    def forward(self):
-        user_aspect_embed = p_t[user_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, u_max_r, mf_dimension)
-        item_aspect_embed = p_t[item_idx_list].view(label.shape[0], -1, conf.aspect_dimension) # (batch_size, i_max_r, mf_dimension)
+        nn.init.xavier_normal_(self.fc.weight)
+        nn.init.zeros_(self.fc.bias)
+        nn.init.zeros_(self.b_users.bias)
+        nn.init.zeros_(self.b_items.bias)
+        nn.init.xavier_normal_(self.fm_V)
+
+    def forward(self, user, item, label):
+        user_aspect_embed = p_t[user].view(label.shape[0], -1, conf.aspect_dim) # (batch_size, u_max_r, mf_dimension)
+        item_aspect_embed = p_t[item].view(label.shape[0], -1, conf.aspect_dim) # (batch_size, i_max_r, mf_dimension)
 
         user_aspect_embed = torch.mean(user_aspect_embed, 1) # (batch_size, xx_dimension)
         item_aspect_embed = torch.mean(item_aspect_embed, 1) # (batch_size, xx_dimension)
@@ -150,25 +168,19 @@ class decoder_fm(nn.Module):
 
         prediction = fm_output.squeeze(1)
         
-        rating_loss = self.mse_func_1(prediction, label)
-        mse_loss = self.mse_func_2(prediction, label)
+        rating_out_loss = F.mse_loss(prediction, label, reduction='sum')
+        rating_obj_loss = F.mse_loss(prediction, label, reduction='none')
 
-        # collect the loss of abae and rating prediction
-        obj_loss = mse_loss + 0.001*J_loss + 0.001*U_loss
-    
 
 class abae_rs(nn.Module):
     def __init__(self):
         super(abae_rs, self).__init__()
+
+        self.encoder = encoder_abae()
+        self.decoder = decoder_fm()
 
         self.reinit()
 
     def reinit(self):
 
     def forward(self):
-
-        
-
-    
-
-    

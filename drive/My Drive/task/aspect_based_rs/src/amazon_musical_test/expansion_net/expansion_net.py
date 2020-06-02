@@ -61,10 +61,10 @@ class encoder(nn.Module):
         
         #import pdb; pdb.set_trace()
 
-        #hidden_state = (u_vector + v_vector + outputs[-1]).view(\
-        #    1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        hidden_state = (u_vector + v_vector + outputs[-1]).view(\
+            1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
-        hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        #hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
         return outputs, gamma_u, gamma_i, beta_u, beta_i, hidden_state
 
