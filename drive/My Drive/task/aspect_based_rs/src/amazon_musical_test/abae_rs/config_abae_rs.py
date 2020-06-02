@@ -7,7 +7,7 @@ learning_rate = 1e-3
 train_epochs = 20
 
 asp_dim = 15
-num_neg_sent = 20
+num_neg_sent = 4
 
 lr_lambda = 1
 
