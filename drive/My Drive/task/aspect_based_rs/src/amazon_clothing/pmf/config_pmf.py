@@ -1,15 +1,19 @@
+'''
 weight_decay = 0.02
-
 learning_rate = 0.005
-
 embedding_dim = 100
+'''
+
+weight_decay = 2e-2
+learning_rate = 2e-3
+embedding_dim = 32
 
 avg_rating = 4.2442
 
 num_users = 39380
 num_items = 23033
 
-batch_size = 1024
+batch_size = 256
 
 train_epochs = 20
 

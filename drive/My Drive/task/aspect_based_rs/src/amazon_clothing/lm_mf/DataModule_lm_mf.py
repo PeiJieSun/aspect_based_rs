@@ -28,7 +28,7 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
-        train_data[idx] = [user, item, rating, review_in, review_out]
+        train_data[idx] = [user, item, rating, review_in, review_out, g_review]
 
     val_data = {}
     f = open(val_data_path)
@@ -36,7 +36,7 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
-        val_data[idx] = [user, item, rating, review_in, review_out]
+        val_data[idx] = [user, item, rating, review_in, review_out, g_review]
     
     test_data = {}
     f = open(test_data_path)
@@ -44,7 +44,7 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review)
-        test_data[idx] = [user, item, rating, review_in, review_out]
+        test_data[idx] = [user, item, rating, review_in, review_out, g_review]
         
     return train_data, val_data, test_data
     
@@ -71,3 +71,24 @@ class TrainData():
         torch.FloatTensor(rating_list).cuda(), \
         torch.LongTensor(np.transpose(review_input_list)).cuda(), \
         torch.LongTensor(np.transpose(review_output_list)).cuda()
+
+class TestData():
+    def __init__(self, train_data):
+        self.train_data = train_data
+        self.length = len(train_data.keys())
+    
+    def get_batch(self, batch_idx_list):
+        user_list, item_list, rating_list = [], [], []
+        review_input_list, review_output_list = [], []
+
+        for data_idx in batch_idx_list:
+            user_list.append(self.train_data[data_idx][0]) # (batch_size, 1)
+            item_list.append(self.train_data[data_idx][1]) # (batch_size, 1)
+            rating_list.append(self.train_data[data_idx][2]) # (batch_size, 1)
+
+            review_output_list.append(self.train_data[data_idx][5]) #(batch_size, seq_length)
+
+        return torch.LongTensor(user_list).cuda(), \
+        torch.LongTensor(item_list).cuda(), \
+        torch.FloatTensor(rating_list).cuda(), \
+        torch.LongTensor(review_output_list).cuda()

@@ -1,122 +1,113 @@
-import gzip
+origin_file = '/content/drive/My Drive/datasets/amazon_reviews/reviews_Movies_and_TV_5.json.gz'
+target_path = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_movies_tv'
+data_name = 'amazon_movies_tv'
+
 import json
+import gzip
+import nltk
+nltk.download('punkt')
 
 import numpy as np
+from tqdm import tqdm
+from collections import Counter
 
-from gensim.models import Word2Vec
-from gensim import utils
+##### 
+#  Read file, and stroe the lines with file_data(dict)
+#####
+file_data = {}
+total_words = list()
+g = gzip.open(origin_file, 'r')
+for line_idx, line in enumerate(tqdm(g)):
+    line = eval(line)
+    tokens = nltk.word_tokenize(line['reviewText'].lower())
+    total_words.extend(tokens)
+    if len(tokens) <= 100:
+        file_data[line_idx] = [line['reviewerID'], line['asin'], float(line['overall']), tokens]
 
-PAD = 0; SOS = 1; EOS = 2
+##### 
+#  Construct Vocabulary with size=30000;
+#####
+# https://stackoverflow.com/questions/55464012/any-efficient-way-to-create-vocabulary-of-top-frequent-words-from-list-of-senten
+c = dict(Counter(total_words))
+words_frequency = list(c.values())
+words_frequency.sort()
+target_frequencey = words_frequency[-30000]
+word_list = []
+for word in c:
+    if c[word] > target_frequencey:
+        word_list.append(word)
+vocab, vocab_decoder = {}, {}
+for word_id, word in enumerate(word_list):
+    vocab[word] = word_id + 3
+    vocab_decoder[word_id + 3] = word
+vocab['pad'] = 0; vocab_decoder[0] = 'pad'
+vocab['sos'] = 1; vocab_decoder[1] = 'sos'
+vocab['eos'] = 2; vocab_decoder[2] = 'eos'
 
-w2v_model = Word2Vec.load("/content/drive/My Drive/task/aspect_based_rs/data/amazon_movies_tv/amazon_movies_tv.wv.model")
-vocab = set(w2v_model.wv.index2entity[:40000])
+np.save('%s/%s.vocab' % (target_path, data_name), vocab)
+np.save('%s/%s.vocab_decoder' % (target_path, data_name), vocab_decoder)
 
-data_name = 'amazon_movies_tv'
-file_path = '/content/drive/My Drive/datasets/amazon_movies_tv'
-origin_file = '%s/reviews_Movies_and_TV_5.json.gz' % file_path
+#####
+# Split data with their line idx
+#####
+line_idx_list = []
+line_idx_list = list(file_data.keys())
+np.random.shuffle(line_idx_list)
+train_idx_list, val_idx_list, test_idx_list = np.split(line_idx_list, [int(0.8*len(line_idx_list)), int(0.9*len(line_idx_list))])
 
-target_path = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_movies_tv'
 train_data = open('%s/%s.train.data' % (target_path, data_name), 'w')
 val_data = open('%s/%s.val.data' % (target_path, data_name), 'w')
 test_data = open('%s/%s.test.data' % (target_path, data_name), 'w')
 
-train_review_embedding_path = '%s/%s.train.review_embedding' % (target_path, data_name)
-val_review_embedding_path = '%s/%s.val.review_embedding' % (target_path, data_name)
-test_review_embedding_path = '%s/%s.test.review_embedding' % (target_path, data_name)
-
-# first is generate the train / val / test data, then write them to the files.
-train_data_list, val_data_list, test_data_list = [], [], []
-train_user, train_item = (), ()
+#####
+# Convert User & Product String ID into integer IDs
+#####
+print('Start to write lines to train data...')
 user_idx_dict, item_idx_dict = {}, {}
-
-g = gzip.open(origin_file, 'r')
-for idx, line in enumerate(g):
-    line = eval(line)
-    if idx % 8 == 0:
-        val_data_list.append([line['reviewerID'], line['asin'], line['overall'], line['reviewText']])
-    elif idx % 9 == 0:
-        test_data_list.append([line['reviewerID'], line['asin'], line['overall'], line['reviewText']])
+for line_idx in tqdm(train_idx_list):
+    o_user_id, o_item_id, rating, tokens = file_data[line_idx][0], \
+        file_data[line_idx][1], file_data[line_idx][2], file_data[line_idx][3]
+    if o_user_id in user_idx_dict:
+        n_user_id = user_idx_dict[o_user_id]
     else:
-        if line['reviewerID'] not in user_idx_dict:
-            user_idx_dict[line['reviewerID']] = len(user_idx_dict.keys())
-        if line['asin'] not in item_idx_dict:
-            item_idx_dict[line['asin']] = len(item_idx_dict.keys())
-        train_data_list.append([line['reviewerID'], line['asin'], line['overall'], line['reviewText']])
-print('data read complete.')
+        n_user_id = len(user_idx_dict.keys())
+        user_idx_dict[o_user_id] = n_user_id
+    if o_item_id in item_idx_dict:
+        n_item_id = item_idx_dict[o_item_id]
+    else:
+        n_item_id = len(item_idx_dict.keys())
+        item_idx_dict[o_item_id] = n_item_id
+    word_id_list = []
+    for word in tokens:
+        if word in vocab:
+            word_id_list.append(vocab[word])
+    train_data.write('%s\n' % json.dumps({'user': n_user_id, \
+        'item': n_item_id, 'rating': rating, 'g_review': word_id_list}))
 
+print('Start to write lines to val data...')
+for line_idx in tqdm(val_idx_list):
+    o_user_id, o_item_id, rating, tokens = file_data[line_idx][0], \
+        file_data[line_idx][1], file_data[line_idx][2], file_data[line_idx][3]
+    if o_user_id in user_idx_dict and o_item_id in item_idx_dict:
+        n_user_id = user_idx_dict[o_user_id]
+        n_item_id = item_idx_dict[o_item_id]
+    word_id_list = []
+    for word in tokens:
+        if word in vocab:
+            word_id_list.append(vocab[word])
+    val_data.write('%s\n' % json.dumps({'user': n_user_id, \
+        'item': n_item_id, 'rating': rating, 'g_review': word_id_list}))
 
-# write train data set to file
-idx = 0
-train_review_embedding = {}
-for value in train_data_list:
-    user, item, rating = user_idx_dict[value[0]], item_idx_dict[value[1]], value[2]
-    review_text = utils.simple_preprocess(value[3])
-    if len(review_text) > 0:
-        review, review_embedding = [], []
-        for word in review_text:
-            if word in vocab:
-                review.append(w2v_model.wv.vocab[word].index + 3)
-                review_embedding.append(w2v_model.wv[word])
-        if len(review) > 0: 
-            if len(review) > 30:
-                review = review[:30]
-                review_embedding = np.mean(review_embedding[:30], axis=0)
-            else:
-                review.extend([PAD]*(30-len(review)))
-                review_embedding = np.mean(review_embedding, axis=0)
-            train_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, 'item': item, 'rating': rating, 'review': review}))
-            train_review_embedding[idx] = review_embedding
-            idx += 1
-np.save(train_review_embedding_path, train_review_embedding)
-
-# write test data set to file
-idx = 0
-val_review_embedding = {}
-for value in val_data_list:
-    reviewerID, asin = value[0], value[1]
-    if reviewerID in user_idx_dict and asin in item_idx_dict:
-        user, item, rating = user_idx_dict[reviewerID], item_idx_dict[asin], value[2]
-        review_text = utils.simple_preprocess(value[3])
-        if len(review_text) > 0:
-            review, review_embedding = [], []
-            for word in review_text:
-                if word in vocab:
-                    review.append(w2v_model.wv.vocab[word].index + 3)
-                    review_embedding.append(w2v_model.wv[word])
-            if len(review) > 0:
-                if len(review) > 30:
-                    review = review[:30]
-                    review_embedding = np.mean(review_embedding[:30], axis=0)
-                else:
-                    review.extend([PAD]*(30-len(review)))
-                    review_embedding = np.mean(review_embedding, axis=0)
-                val_data.write('%s\n' % json.dumps({'idx': idx, 'user': user, 'item': item, 'rating': rating, 'review': review}))
-                val_review_embedding[idx] = review_embedding
-                idx += 1
-np.save(val_review_embedding_path, val_review_embedding)
-
-# write test data set to file
-idx = 0
-test_review_embedding = {}
-for value in test_data_list:
-    reviewerID, asin = value[0], value[1]
-    if reviewerID in user_idx_dict and asin in item_idx_dict:
-        user, item, rating = user_idx_dict[reviewerID], item_idx_dict[asin], value[2]
-        review_text = utils.simple_preprocess(value[3])
-        if len(review_text) > 0:
-            review, review_embedding = [], []
-            for word in review_text:
-                if word in vocab:
-                    review.append(w2v_model.wv.vocab[word].index + 3)
-                    review_embedding.append(w2v_model.wv[word])
-            if len(review) > 0:
-                if len(review) > 30:
-                    review = review[:30]
-                    review_embedding = np.mean(review_embedding[:30], axis=0)
-                else:
-                    review.extend([PAD]*(30-len(review)))
-                    review_embedding = np.mean(review_embedding, axis=0)
-                test_data.write('%s\n' % json.dumps({'idx': idx,'user': user, 'item': item, 'rating': rating, 'review': review}))
-                test_review_embedding[idx] = review_embedding
-                idx += 1
-np.save(test_review_embedding_path, test_review_embedding)
+print('Start to write lines to test data...')
+for line_idx in tqdm(test_idx_list):
+    o_user_id, o_item_id, rating, tokens = file_data[line_idx][0], \
+        file_data[line_idx][1], file_data[line_idx][2], file_data[line_idx][3]
+    if o_user_id in user_idx_dict and o_item_id in item_idx_dict:
+        n_user_id = user_idx_dict[o_user_id]
+        n_item_id = item_idx_dict[o_item_id]
+    word_id_list = []
+    for word in tokens:
+        if word in vocab:
+            word_id_list.append(vocab[word])
+    test_data.write('%s\n' % json.dumps({'user': n_user_id, \
+        'item': n_item_id, 'rating': rating, 'g_review': word_id_list}))

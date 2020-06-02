@@ -45,7 +45,7 @@ if __name__ == '__main__':
         model_params['word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-3]])
     model.load_state_dict(model_params)
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_language_model_id_0X.mod'))
+    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_language_model_id_0X.mod'))
     model.cuda()
     
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         model.train()
 
         train_loss = []
-        for batch_idx_list in val_batch_sampler:
+        for batch_idx_list in train_batch_sampler:
             user, item, _, review_input, review_output = train_dataset.get_batch(batch_idx_list)
             obj_loss = model(user, item, review_input, review_output)
             train_loss.extend([obj_loss.item()]*len(batch_idx_list))

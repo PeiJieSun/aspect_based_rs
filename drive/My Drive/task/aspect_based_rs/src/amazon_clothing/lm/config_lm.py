@@ -1,7 +1,7 @@
 word_dimension = 200
 
 drop_out = 0.5
-weight_decay = 1e-3
+weight_decay = 0.02
 
 vocab_sz = 15350 + 3
 batch_size = 256
@@ -15,7 +15,7 @@ sequence_length = 31
 num_users = 39380
 num_items = 23034
 
-mf_dimension = 32
+mf_dimension = 100
 
 hidden_dimension = 256
 

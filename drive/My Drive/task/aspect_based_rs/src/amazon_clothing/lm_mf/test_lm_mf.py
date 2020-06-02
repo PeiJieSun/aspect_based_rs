@@ -14,6 +14,8 @@ from gensim.models import Word2Vec
 import DataModule_lm_mf as data_utils
 import config_lm_mf as conf
 
+from bleu import *
+
 from Logging import Logging
 
 def tensorToScalar(tensor):
@@ -40,10 +42,15 @@ def convertWord(word_idx_list, word_dict):
 if __name__ == '__main__':
     
     ############################## CREATE MODEL ##############################
-    from lm import lm
-    model = lm()
+    from lm_mf import Seq2Seq
+    from lm_mf import Encoder_PMF
+    from lm_mf import Decoder_LM
 
-    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_id_x.mod'))
+    encoder = Encoder_PMF()
+    decoder = Decoder_LM()
+    model = Seq2Seq(encoder, decoder)
+
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_mf_id_X.mod'))
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
 
@@ -54,14 +61,33 @@ if __name__ == '__main__':
     t1 = time()
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
     
-    test_dataset = data_utils.TrainData(test_data)
+    test_dataset = data_utils.TestData(test_data)
     test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=1, drop_last=False)
 
     word_dict = constructDict()
 
     test_loss = []
+    t0 = time()
+    count = 0
+    bleu_list_1, bleu_list_2, bleu_list_3, bleu_list_4 = [], [], [], []
     for batch_idx_list in test_batch_sampler:
-        user_list, item_list, _, review_input_list, review_output_list = test_dataset.get_batch(batch_idx_list)
-        sample_idx_list = model.sampleTextByBeamSearch(user_list, item_list)
-        convertWord(sample_idx_list, word_dict)
-        import pdb; pdb.set_trace()
+        user_list, item_list, label_list, review_output_list = test_dataset.get_batch(batch_idx_list)
+        sample_idx_list = model.sampleTextByBeamSearch(user_list, item_list, label_list)
+        ref = review_output_list
+        bleu_score = compute_bleu([sample_idx_list], [[ref]])
+        bleu_list_1.append(bleu_score[1])
+        bleu_list_2.append(bleu_score[2])
+        bleu_list_3.append(bleu_score[3])
+        bleu_list_4.append(bleu_score[4])
+
+        count += 1
+        if count % 1000 == 0:
+            t1 = time()
+            print('Generating %d lines, test samples cost:%.4fs' % (count, (t1-t0)))
+
+    print('compute bleu_1:%.4f' % (np.mean(bleu_list_1)))
+    print('compute bleu_2:%.4f' % (np.mean(bleu_list_2)))
+    print('compute bleu_3:%.4f' % (np.mean(bleu_list_3)))
+    print('compute bleu_4:%.4f' % (np.mean(bleu_list_4)))
+    t1 = time()
+    print('Generating all test samples cost:%.4fs' % (t1-t0))

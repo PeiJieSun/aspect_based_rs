@@ -15,9 +15,6 @@ class pmf(nn.Module):
 
         self.avg_rating = torch.FloatTensor([conf.avg_rating]).cuda()
 
-        self.obj_function = nn.MSELoss(reduction='sum')
-        self.loss_function = nn.MSELoss(reduction='none')
-
         self.reinit()
 
     def reinit(self):
@@ -34,15 +31,10 @@ class pmf(nn.Module):
         item_bias = self.item_bias(item)
                 
         output_emb = user_emb * item_emb
-        
-        #import pdb; pdb.set_trace()
-        
+                
         prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias 
 
-        obj_loss = self.obj_function(prediction.view(-1), label) 
+        obj_loss = F.mse_loss(prediction.view(-1), label, 'sum') 
+        mse_loss = F.mse_loss(prediction.view(-1), label, 'none')
 
-        mse_loss = self.loss_function(prediction.view(-1), label)
-        #rmse_loss = torch.sqrt(mse_loss)
-        #import pdb; pdb.set_trace()
-        
         return prediction.view(-1), obj_loss, mse_loss

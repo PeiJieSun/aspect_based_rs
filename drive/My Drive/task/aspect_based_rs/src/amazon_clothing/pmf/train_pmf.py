@@ -37,18 +37,16 @@ if __name__ == '__main__':
 
     #import pdb; pdb.set_trace()
     
-    #model.load_state_dict(torch.load('%s/train_%s_pmf_id_adabound.mod' % (conf.model_path, conf.data_name)))
+    model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_pmf_id_X1.mod'))
     model.cuda()
     #optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
-    #import adabound
-    #optimizer = adabound.AdaBound(model.parameters(), lr=conf.learning_rate, final_lr=0.1, weight_decay=conf.weight_decay)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_pmf_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_pmf_id_x---.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_pmf_id_x---.mod' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_pmf_id_X1.log' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_pmf_id_X1.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -72,7 +70,7 @@ if __name__ == '__main__':
             #import pdb; pdb.set_trace()
             train_loss.extend(tensorToScalar(mse_loss))
             train_prediction.extend(tensorToScalar(prediction))
-            model.zero_grad(); obj_loss.backward(); optimizer.step()
+            #model.zero_grad(); obj_loss.backward(); optimizer.step()
         t1 = time()
 
         #import pdb; pdb.set_trace()
@@ -104,7 +102,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), train_model_path)
         min_loss = min(val_loss, min_loss)
         '''
-
+        
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
 

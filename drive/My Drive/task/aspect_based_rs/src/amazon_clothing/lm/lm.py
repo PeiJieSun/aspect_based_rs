@@ -29,7 +29,7 @@ class lm(nn.Module):
         self.item_linear = nn.Linear(conf.mf_dimension, conf.hidden_dimension)
 
         self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
-        self.rnn = nn.GRU(conf.word_dimension, conf.hidden_dimension, num_layers=1, bidirectional=False)
+        self.rnn = nn.GRU(conf.word_dimension, conf.hidden_dimension, num_layers=1, dropout=0.5)
 
         self.rnn_out_linear = nn.Linear(conf.hidden_dimension, conf.vocab_sz)
         
