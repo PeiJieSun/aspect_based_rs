@@ -88,14 +88,14 @@ if __name__ == '__main__':
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            pos_sent, neg_sent = train_dataset.get_batch(batch_idx_list)
+            pos_sent, neg_sent = val_dataset.get_batch(batch_idx_list)
             _, _, out_loss, obj = model(pos_sent, neg_sent)
             val_loss.extend(tensorToScalar(out_loss))
         t2 = time()
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            pos_sent, neg_sent = train_dataset.get_batch(batch_idx_list)
+            pos_sent, neg_sent = test_dataset.get_batch(batch_idx_list)
             _, _, out_loss, obj = model(pos_sent, neg_sent) 
             test_loss.extend(tensorToScalar(out_loss))
         t3 = time()

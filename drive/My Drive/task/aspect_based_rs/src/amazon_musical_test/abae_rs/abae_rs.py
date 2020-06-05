@@ -6,7 +6,7 @@ import random
 
 from gensim.models import Word2Vec
 
-import config_abae as conf
+import config_abae_rs as conf
 
 PAD = 0; SOS = 1; EOS = 2
 
@@ -17,7 +17,7 @@ class encoder_abae(nn.Module):
     def __init__(self):
         super(encoder_abae, self).__init__()
 
-        self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dim) 
+        self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dim)
         self.word_embedding.weight.requires_grad = False
         
         self.transform_M = nn.Linear(conf.word_dim, conf.word_dim, bias=False) # weight: word_dimension * word_dimension
@@ -53,7 +53,6 @@ class encoder_abae(nn.Module):
         # torch.matmul(e_w, a): (batch_size, word_dimension, 1)
         z_s = torch.sum(e_w*ax_4, dim=1).view(-1, conf.word_dim) # (batch_size, word_dimension)
 
-        #import  pdb; pdb.set_trace()
         return z_s
 
     # w: (batch_size, sequence_length)
@@ -78,8 +77,6 @@ class encoder_abae(nn.Module):
         y_s = (y_s / pos_rev_mask).view(-1, conf.word_dim, 1)
         z_n = (z_n / neg_rev_mask).view(-1, conf.word_dim)
 
-        #import pdb; pdb.set_trace()
-
         z_s = self._attention(pos_rev, pos_rev_emb, y_s) # (batch_size, word_dimension)
         
         #p_t = self.transform_W(z_s)
@@ -98,52 +95,58 @@ class encoder_abae(nn.Module):
         c2 = (F.normalize(z_n.view(y_s.shape[0], conf.num_neg_sent, -1), p=2, dim=2) \
              * F.normalize(r_s.view(y_s.shape[0], 1, -1), p=2, dim=2)).sum(-1).view(-1) # (batch_size * num_negative)
         
-        out_loss = margin_ranking_loss(c1, c2, torch.FloatTensor([1.0]).cuda())
-        
-        J_loss = torch.mean(out_loss)
-
-        transform_T_weight = F.normalize(self.transform_T.weight, p=2, dim=0) # word_dimension * aspect_dimension
+        J_loss = margin_ranking_loss(c1, c2, torch.FloatTensor([1.0]).cuda())
+    
+        transform_T_weight = F.normalize(self.transform_T.weight, p=2, dim=0) # word_dimension * asp_dim
         U_loss = mse_loss(torch.matmul(torch.transpose(transform_T_weight, 0, 1), transform_T_weight), torch.eye(conf.asp_dim).cuda())
-        return out_loss, U_loss, J_loss
+
+        return p_t, J_loss, U_loss
 
 class decoder_fm(nn.Module):
     def __init__(self):
-        super(decoder, self).__init__()
+        super(decoder_fm, self).__init__()
 
-        self.free_user_embedding = nn.Embedding(conf.num_users, conf.embedding_dim)  # user/item num * 32
-        self.free_item_embedding = nn.Embedding(conf.num_items, conf.embedding_dim)
+        self.user_fc_linear = nn.Linear(conf.asp_dim, conf.mf_dim)
+        self.item_fc_linear = nn.Linear(conf.asp_dim, conf.mf_dim)
 
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.mf_dim)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.mf_dim)
+
+        self.dropout = nn.Dropout(conf.dropout)
+
+        dim = conf.mf_dim * 2
         # ---------------------------fc_linear------------------------------
         self.fc = nn.Linear(dim, 1)
         # ------------------------------FM----------------------------------
         self.fm_V = nn.Parameter(torch.randn(dim, 10))
-        self.b_users = nn.Embedding(conf.num_users, 1)
-        self.b_items = nn.Embedding(conf.num_items, 1)
+        self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
+        self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
 
         self.reinit()
 
     def reinit(self):
+        for fc in [self.user_fc_linear, self.item_fc_linear]:
+            nn.init.uniform_(fc.weight, -0.1, 0.1)
+            nn.init.constant_(fc.bias, 0.1)
+
         nn.init.xavier_normal_(self.free_user_embedding.weight)
         nn.init.xavier_normal_(self.free_item_embedding.weight)
 
-        nn.init.xavier_normal_(self.fc.weight)
-        nn.init.zeros_(self.fc.bias)
-        nn.init.zeros_(self.b_users.bias)
-        nn.init.zeros_(self.b_items.bias)
-        nn.init.xavier_normal_(self.fm_V)
+        nn.init.uniform_(self.fc.weight, -0.05, 0.05)
+        nn.init.constant_(self.fc.bias, 0.0)
+        nn.init.uniform_(self.b_users, a=0, b=0.1)
+        nn.init.uniform_(self.b_items, a=0, b=0.1)
+        nn.init.uniform_(self.fm_V, -0.05, 0.05)
 
-    def forward(self, user, item, label, aspect_user_embed, aspect_item_embed):
-        item_aspect_embed = self.transform_wang(item_aspect_embed)
+    def forward(self, user, item, aspect_user_embed, aspect_item_embed):
+        u_fea = self.user_fc_linear(aspect_user_embed)
+        i_fea = self.item_fc_linear(aspect_item_embed)
 
-        # Co-Attention
-        aspect_user_embed = torch.sum(torch.matmul(aspect_user_embed.view(label.shape[0], -1, 1), \
-            aspect_item_embed.view(label.shape[0], 1, -1)), 1)
+        u_out = u_fea + 1.0 * self.free_user_embedding(user)
+        i_out = i_fea + 1.0 * self.free_item_embedding(item)
 
-        final_user_embed = aspect_user_embed + self.free_user_embedding(user)
-        final_item_embed = aspect_item_embed + self.free_item_embedding(item)
+        input_vec = torch.cat([u_out, i_out], 1)
 
-        input_vec = torch.cat([final_user_embed, final_item_embed], 1) # (batch_size, 2*xx_dimension)
-        input_vec = self.user_fc_linear(input_vec)
         input_vec = self.dropout(input_vec)
 
         fm_linear_part = self.fc(input_vec)
@@ -153,12 +156,12 @@ class decoder_fm(nn.Module):
 
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) + fm_linear_part + self.b_users[user] + self.b_items[item] # + conf.avg_rating
+        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) \
+            + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating
 
         prediction = fm_output.squeeze(1)
-        
-        return prediction
 
+        return prediction
 
 class abae_rs(nn.Module):
     def __init__(self):
@@ -167,14 +170,20 @@ class abae_rs(nn.Module):
         self.encoder = encoder_abae()
         self.decoder = decoder_fm()
 
-    def forward(self, pos_user_rev, neg_user_rev, pos_item_rev, neg_item_rev, user, item, label):
-        aspect_user_embed = self.encoder_abae(pos_user_rev, neg_user_rev)
-        aspect_item_embed = self.encoder_abae(pos_item_rev, neg_item_rev)
+    def forward(self, user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent):
+        aspect_user_embed, user_J_loss, user_U_loss = self.encoder(user_pos_sent, user_neg_sent)
+        aspect_item_embed, item_J_loss, item_U_loss = self.encoder(item_pos_sent, item_neg_sent)
 
-        aspect_user_embed = torch.mean(aspect_user_embed.reshape(-1, conf.user_seq_num, conf.word_dim))
-        aspect_item_embed = torch.mean(aspect_item_embed.reshape(-1, conf.item_seq_num, conf.word_dim))
+        aspect_user_embed = torch.mean(aspect_user_embed.reshape(-1, conf.user_seq_num, conf.asp_dim), dim=1)
+        aspect_item_embed = torch.mean(aspect_item_embed.reshape(-1, conf.item_seq_num, conf.asp_dim), dim=1)
 
-        rating_out_loss = F.mse_loss(prediction, label, reduction='sum')
-        rating_obj_loss = F.mse_loss(prediction, label, reduction='none')
+        #import pdb; pdb.set_trace()
 
-        return rating_out_loss, rating_obj_loss
+        #aspect_user_embed = None; aspect_item_embed = None
+
+        rating_pred = self.decoder(user, item, aspect_user_embed, aspect_item_embed)
+
+        rating_out_loss = F.mse_loss(rating_pred, label, reduction='none')
+        rating_obj_loss = F.mse_loss(rating_pred, label, reduction='sum')
+
+        return rating_out_loss, rating_obj_loss, rating_pred
