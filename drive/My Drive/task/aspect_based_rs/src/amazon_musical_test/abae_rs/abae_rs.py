@@ -157,7 +157,7 @@ class decoder_fm(nn.Module):
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
         fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) \
-            + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating
+            + fm_linear_part + 0.0 * self.b_users[user] + 0.0 * self.b_items[item] + 1.0 * conf.avg_rating
 
         prediction = fm_output.squeeze(1)
 
