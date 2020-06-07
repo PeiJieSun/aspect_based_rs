@@ -5,16 +5,20 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_lm as data_utils
-import config_lm as conf
+import DataModule_gru as data_utils
+import config_gru as conf
 
 from evaluate import evaluate
 
 from Logging import Logging
+
+def now():
+    return str(strftime('%Y-%m-%d %H:%M:%S'))
+
 
 def check_dir(file_path):
     import os
@@ -27,8 +31,8 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    from lm import lm
-    model = lm()
+    from gru import gru
+    model = gru()
     
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_id_X7.mod'))
     model.cuda()
@@ -47,8 +51,8 @@ if __name__ == '__main__':
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_lm_id_x.py' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_lm_id_X.py' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_lm_id_X' % (conf.out_path, conf.data_name)
+    log = Logging('%s/train_%s_gru_lm_id_X.py' % (conf.out_path, conf.data_name))
+    train_model_path = '%s/train_%s_gru_lm_id_X' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
@@ -71,9 +75,7 @@ if __name__ == '__main__':
             user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
             out_loss, obj = model(user_list, item_list, review_input_list, review_output_list)
             train_review_loss.extend(tensorToScalar(out_loss))
-            model.zero_grad(); obj.backward(); 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-            optimizer.step()
+            model.zero_grad(); obj.backward(); optimizer.step()
             #import pdb; pdb.set_trace()
         t1 = time()
 
@@ -92,10 +94,10 @@ if __name__ == '__main__':
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t2-t1)))
             log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, rouge_L_f))
         
-        if epoch == 11:
-            import sys; sys.exit(0)
-        
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
 
         #import sys; sys.exit()
+    log.record("----"*20)
+    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record("----"*20)

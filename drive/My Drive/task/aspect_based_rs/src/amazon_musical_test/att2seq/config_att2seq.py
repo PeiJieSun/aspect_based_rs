@@ -1,16 +1,16 @@
-num_users = 1347
-num_items = 875
-mf_dimension = 32
-word_dimension = 200
-hidden_dimension = 256
-learning_rate = 0.002
-weight_decay = 0.01
-vocab_sz = 15353
-batch_size = 128
-train_epochs = 50
-sequence_length = 30
+word_dim = 512
+hidden_dim = 512
+mf_dim = 32
 
-avg_rating = 4.2442
+dropout = 0.1
+learning_rate = 2e-3
+batch_size = 256
+train_epochs = 100
+
+num_users = 1429
+num_items = 900
+vocab_sz = 12794
+rev_len = 31
 
 root_path = '/content/drive/My Drive/task/aspect_based_rs/'
 data_name = 'amazon_musical_test'

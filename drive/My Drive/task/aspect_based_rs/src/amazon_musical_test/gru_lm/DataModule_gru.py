@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 
 import torch.utils.data as data
-import config_lm as conf
+import config_gru as conf
 
 from copy import deepcopy
 
@@ -16,9 +16,9 @@ test_data_path = '%s/%s.test.data' % (conf.target_path, conf.data_name)
 
 def generate_review(review):
     review_in = review[:-1]
-    review_in.extend([PAD]*(30-len(review_in)))
+    review_in.extend([PAD]*(conf.rev_len-len(review_in)))
     review_out = review[1:]
-    review_out.extend([PAD]*(30-len(review_out)))
+    review_out.extend([PAD]*(conf.rev_len-len(review_out)))
     return review_in, review_out
 
 def load_all():
@@ -30,8 +30,8 @@ def load_all():
     for idx, line in enumerate(f):
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
-        review_in, review_out = generate_review(g_review[:30])
-        train_data[idx] = [user, item, rating, review_in, review_out, g_review[:30]]
+        review_in, review_out = generate_review(g_review[:conf.rev_len])
+        train_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
 
         max_user = max(max_user, user)
         max_item = max(max_item, item)
@@ -41,16 +41,16 @@ def load_all():
     for idx, line in enumerate(f):
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
-        review_in, review_out = generate_review(g_review[:30])
-        val_data[idx] = [user, item, rating, review_in, review_out, g_review[:30]]
+        review_in, review_out = generate_review(g_review[:conf.rev_len])
+        val_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
     
     test_data = {}
     f = open(test_data_path)
     for idx, line in enumerate(f):
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
-        review_in, review_out = generate_review(g_review[:30])
-        test_data[idx] = [user, item, rating, review_in, review_out, g_review[:30]]
+        review_in, review_out = generate_review(g_review[:conf.rev_len])
+        test_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
     
     #import pdb; pdb.set_trace()
     return train_data, val_data, test_data

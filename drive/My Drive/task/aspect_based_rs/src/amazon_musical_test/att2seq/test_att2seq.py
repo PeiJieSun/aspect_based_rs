@@ -56,6 +56,8 @@ if __name__ == '__main__':
     print('test dataset length:%d' % test_dataset.length)
     word_dict = constructDict()
 
+    model.eval()
+
     t0 = time()
     count = 0
     bleu_score = []

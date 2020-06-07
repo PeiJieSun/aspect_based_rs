@@ -13,16 +13,16 @@ from copy import deepcopy
 
 PAD = 0; SOS = 1; EOS = 2
 
-import config_lm as conf 
+import config_att2seq as conf 
 
 class encoder(nn.Module):
     def __init__(self):
         super(encoder, self).__init__()
 
-        self.user_embedding = nn.Embedding(conf.num_users, conf.mf_dimension)
-        self.item_embedding = nn.Embedding(conf.num_items, conf.mf_dimension)
+        self.user_embedding = nn.Embedding(conf.num_users, conf.mf_dim)
+        self.item_embedding = nn.Embedding(conf.num_items, conf.mf_dim)
 
-        self.hidden_layer = nn.Linear(conf.mf_dimension, conf.hidden_dimension)
+        self.hidden_layer = nn.Linear(conf.mf_dim, conf.hidden_dim)
     
         self.reinit()
 
@@ -35,7 +35,7 @@ class encoder(nn.Module):
         item_embed = self.item_embedding(item)
 
         hidden_state = torch.tanh(self.hidden_layer(user_embed+item_embed))\
-            .view(1, -1, conf.hidden_dimension) # (1, batch_size, hidden_dimension)
+            .view(1, -1, conf.hidden_dim) # (1, batch_size, hidden_dimension)
         #import pdb; pdb.set_trace()
 
         return hidden_state
@@ -43,7 +43,9 @@ class encoder(nn.Module):
 class decoder(nn.Module):
     def __init__(self):
         super(decoder, self).__init__()
-        self.rnn = nn.GRU(conf.word_dimension, conf.hidden_dimension, num_layers=1)
+        self.rnn = nn.GRU(conf.word_dim, conf.hidden_dim, num_layers=1, dropout=conf.dropout)
+
+        self.dropout = nn.Dropout(conf.dropout)
 
         self.reinit()
 
@@ -54,21 +56,24 @@ class decoder(nn.Module):
             else:
                 nn.init.zeros_(param.data)
 
-    def forward(self, input_vector, hidden_state):
-        input_vector = F.dropout(input_vector, p=0.5)
+    def forward(self, input_vector, hidden_state=None):
+        input_vector = self.dropout(input_vector)
 
-        output, hidden_state = self.rnn(input_vector, hidden_state)
+        if hidden_state == None:
+            output, hidden_state = self.rnn(input_vector)
+        else:
+            output, hidden_state = self.rnn(input_vector, hidden_state)
         return output, hidden_state
 
-class lm(nn.Module): 
+class att2seq(nn.Module): 
     def __init__(self):
-        super(lm, self).__init__()
+        super(att2seq, self).__init__()
 
         self.encoder = encoder()
         self.decoder = decoder()
 
-        self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dimension)
-        self.rnn_out_linear = nn.Linear(conf.hidden_dimension, conf.vocab_sz)
+        self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dim)
+        self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz)
         
         self.reinit()
 
@@ -84,7 +89,7 @@ class lm(nn.Module):
             input_vector = self.word_embedding(t_input.view(1, -1))
             output, hidden_state = self.decoder(input_vector, hidden_state)
             outputs.append(output)
-        outputs = torch.cat(outputs, dim=0).view(-1, conf.hidden_dimension) # (tiem*batch, hidden_size)
+        outputs = torch.cat(outputs, dim=0).view(-1, conf.hidden_dim) # (tiem*batch, hidden_size)
 
         word_probit = self.rnn_out_linear(outputs) # (time*batch, vocab_sz)
         
@@ -103,7 +108,7 @@ class lm(nn.Module):
 
         #import pdb; pdb.set_trace()
         sample_idx_list = [next_word_idx.item()]
-        for _ in range(conf.sequence_length):
+        for _ in range(conf.rev_len):
             input_vector = self.word_embedding(next_word_idx).reshape(1, 1, -1)
 
             output, hidden_state = self.decoder(input_vector, hidden_state)
@@ -128,7 +133,7 @@ class lm(nn.Module):
 
         # first iteration: prepare the input text data
         input_vector = self.encoder(user, item)
-        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dimension).cuda()
+        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda()
         output, hidden_state = self.decoder(input_vector, hidden_state)
         word_probit = self.rnn_out_linear(output).reshape(-1, conf.vocab_sz)
 
@@ -145,7 +150,7 @@ class lm(nn.Module):
         #second iteration: construct the hidden_state for current iteration
         hidden_state = hidden_state.repeat(1, beam_size, 1)  # (1, beam_size, hidden_size)
 
-        for _ in range(conf.sequence_length):
+        for _ in range(conf.rev_len):
             seed_vector = self.word_embedding(next_word_idx)
 
             # hidden_state: ((2, batch_size, hidden_size), (2, batch_size, hidden_size))
