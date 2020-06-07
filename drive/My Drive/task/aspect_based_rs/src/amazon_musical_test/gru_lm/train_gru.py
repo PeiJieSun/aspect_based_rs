@@ -85,10 +85,10 @@ if __name__ == '__main__':
         if epoch % 5 == 0:
             val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, model)
         
-            if val_bleu_4 > max_bleu:
+            if (val_bleu_4+rouge_L_f) > max_bleu:
                 torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
                 best_epoch = epoch
-            max_bleu = max(max_bleu, val_bleu_4)
+            max_bleu = max(max_bleu, (val_bleu_4+rouge_L_f))
 
             t2 = time()
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t2-t1)))

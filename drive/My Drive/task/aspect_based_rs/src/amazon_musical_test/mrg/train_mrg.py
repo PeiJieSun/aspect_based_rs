@@ -70,17 +70,39 @@ if __name__ == '__main__':
         model.train()
 
         #import pdb; pdb.set_trace()
-        train_review_loss = []
+        train_rating_loss, train_review_loss = [], []
         for batch_idx_list in train_batch_sampler:
-            user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
-            out_loss, obj = model(user_list, item_list, review_input_list, review_output_list)
-            train_review_loss.extend(tensorToScalar(out_loss))
+            user_list, item_list, label_list, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
+            out_rating_loss, out_review_loss, obj = model(user_list, item_list, label_list, review_input_list, review_output_list)
             model.zero_grad(); obj.backward(); optimizer.step()
+
+            train_review_loss.extend(tensorToScalar(out_review_loss))
+            train_rating_loss.extend(tensorToScalar(out_rating_loss))
             #import pdb; pdb.set_trace()
         t1 = time()
 
         # evaluate the performance of the model with following code
         model.eval()
+
+        val_rating_loss, val_review_loss = [], []
+        for batch_idx_list in val_batch_sampler:
+            user_list, item_list, label_list, review_input_list, review_output_list =\
+                val_dataset.get_batch(batch_idx_list)
+            out_rating_loss, out_review_loss, obj = model(user_list, item_list, \
+                label_list, review_input_list, review_output_list)
+
+            val_review_loss.extend(tensorToScalar(out_review_loss))
+            val_rating_loss.extend(tensorToScalar(out_rating_loss))
+
+        test_rating_loss, test_review_loss = [], []
+        for batch_idx_list in train_batch_sampler:
+            user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
+            out_rating_loss, out_review_loss, obj = model(user_list, item_list, label_list, review_input_list, review_output_list)
+            model.zero_grad(); obj.backward(); optimizer.step()
+
+            train_review_loss.extend(tensorToScalar(out_review_loss))
+            train_rating_loss.extend(tensorToScalar(out_rating_loss))
+
         
         if epoch % 5 == 0:
             val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, model)
