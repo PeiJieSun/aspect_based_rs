@@ -5,7 +5,7 @@ mf_dim = 32
 dropout = 0.1
 learning_rate = 2e-3
 batch_size = 256
-train_epochs = 100
+train_epochs = 50
 
 num_users = 1429
 num_items = 900

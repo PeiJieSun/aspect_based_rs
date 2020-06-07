@@ -40,7 +40,8 @@ if __name__ == '__main__':
     #model.encoder.user_embedding.weight.requires_grad = False
     #model.encoder.item_embedding.weight.requires_grad = False
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
+    review_optimizer = torch.optim.Adam(model.parameters()+model.decoder_review.parameters(), lr=conf.learning_rate)
+    rating_optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
@@ -96,30 +97,41 @@ if __name__ == '__main__':
 
         test_rating_loss, test_review_loss = [], []
         for batch_idx_list in train_batch_sampler:
-            user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
-            out_rating_loss, out_review_loss, obj = model(user_list, item_list, label_list, review_input_list, review_output_list)
-            model.zero_grad(); obj.backward(); optimizer.step()
+            user_list, item_list, label_list, review_input_list, review_output_list =\
+                train_dataset.get_batch(batch_idx_list)
+            out_rating_loss, out_review_loss, obj = model(user_list, item_list, \
+                label_list, review_input_list, review_output_list)
 
-            train_review_loss.extend(tensorToScalar(out_review_loss))
-            train_rating_loss.extend(tensorToScalar(out_rating_loss))
-
+            test_review_loss.extend(tensorToScalar(out_review_loss))
+            test_rating_loss.extend(tensorToScalar(out_rating_loss))
         
         if epoch % 5 == 0:
             val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, model)
         
             if (val_bleu_4 + rouge_L_f) > max_bleu:
                 torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
-                best_epoch = epoch
+                review_best_epoch = epoch
                 max_bleu = max(max_bleu, (val_bleu_4 + rouge_L_f))
 
             t2 = time()
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t2-t1)))
             log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, rouge_L_f))
         
+        if epoch == 1:
+            min_rating_loss = val_rating_loss
+        if val_rating_loss < min_rating_loss:
+            #torch.save(model.state_dict(), train_model_path)
+            rating_best_epoch = epoch
+        min_rating_loss = min(val_rating_loss, min_rating_loss)
+
+        train_rating_loss, val_rating_loss, test_rating_loss = \
+            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
+
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
-        log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
+        log.record('Train Review loss:{:.4f}'.format(np.mean(train_review_loss)))
 
         #import sys; sys.exit()
     log.record("----"*20)
-    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record(f"{now()} {conf.data_name} rating best epoch: {rating_best_epoch}")
+    log.record(f"{now()} {conf.data_name} rating best epoch: {review_best_epoch}")
     log.record("----"*20)
