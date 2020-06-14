@@ -78,7 +78,7 @@ def load_all():
     return train_data, val_data, test_data, user_seq_dict, item_seq_dict
 
 class TrainData():
-    def __init__(self, train_data, user_seq_dict, item_seq_dict):
+    def __init__(self, train_data, user_seq_dict=None, item_seq_dict=None):
         self.train_data = train_data
         self.user_seq_dict = user_seq_dict
         self.item_seq_dict = item_seq_dict
@@ -116,6 +116,7 @@ class TrainData():
                         item_neg_sent.append(self.item_seq_dict[j][xx])
             except:
                 import pdb; pdb.set_trace()
+            
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
@@ -124,3 +125,4 @@ class TrainData():
         torch.LongTensor(user_neg_sent).cuda(), \
         torch.LongTensor(item_pos_sent).cuda(), \
         torch.LongTensor(item_neg_sent).cuda()
+        

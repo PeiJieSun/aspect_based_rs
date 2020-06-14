@@ -17,25 +17,29 @@ class ncf(nn.Module):
         for idx in range(1, len(conf.mlp_dim_list)):
             self.linears.append(nn.Linear(conf.mlp_dim_list[idx-1], conf.mlp_dim_list[idx], bias=False).cuda())
 
-        self.final_linear = nn.Linear(conf.mlp_embed_dim+conf.gmf_embed_dim, 1)
+        #self.final_linear = nn.Linear(conf.mlp_embed_dim+conf.gmf_embed_dim, 1)
+        self.final_linear = nn.Linear(conf.mlp_embed_dim, 1)
 
-        self.obj_function = nn.MSELoss(reduction='sum')
-        self.loss_function = nn.MSELoss(reduction='none')
+        self.user_bias = nn.Embedding(conf.num_users, 1)
+        self.item_bias = nn.Embedding(conf.num_items, 1)
 
         self.reinit()
 
     def reinit(self):
-        nn.init.xavier_normal_(self.gmf_user_embedding.weight)
-        nn.init.xavier_normal_(self.gmf_item_embedding.weight)
+        self.gmf_user_embedding.weight = torch.nn.Parameter(0.1 * self.gmf_user_embedding.weight)
+        self.gmf_item_embedding.weight = torch.nn.Parameter(0.1 * self.gmf_item_embedding.weight)
 
-        nn.init.xavier_normal_(self.mlp_user_embedding.weight)
-        nn.init.xavier_normal_(self.mlp_item_embedding.weight)
+        self.mlp_user_embedding.weight = torch.nn.Parameter(0.1 * self.mlp_user_embedding.weight)
+        self.mlp_item_embedding.weight = torch.nn.Parameter(0.1 * self.mlp_item_embedding.weight)
 
         for idx in range(len(conf.mlp_dim_list)-1):
             nn.init.uniform_(self.linears[idx].weight, -0.1, 0.1)
     
         nn.init.uniform_(self.final_linear.weight, -0.05, 0.05)
         nn.init.constant_(self.final_linear.bias, 0.0)
+
+        self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
+        self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1))
 
     def forward(self, user, item, label):
         gmf_user_embed = self.gmf_user_embedding(user)
@@ -50,13 +54,15 @@ class ncf(nn.Module):
         for idx in range(len(conf.mlp_dim_list)-1):
             mlp_concat_emebd = torch.relu(self.linears[idx](mlp_concat_emebd))
         
+        user_bias = self.user_bias(user)
+        item_bias = self.item_bias(item)
         
         final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(final_embed).view(-1) + conf.avg_rating
+        prediction = self.final_linear(mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
+        
+        prediction = prediction.view(-1)
 
-        #prediction = torch.sum(output_emb, 1, keepdims=True)
-
-        obj_loss = self.obj_function(prediction, label) 
-        mse_loss = self.loss_function(prediction, label)
+        obj_loss = F.mse_loss(prediction.view(-1), label, reduction='sum') 
+        mse_loss = F.mse_loss(prediction.view(-1), label, reduction='none')
         
         return prediction, obj_loss, mse_loss

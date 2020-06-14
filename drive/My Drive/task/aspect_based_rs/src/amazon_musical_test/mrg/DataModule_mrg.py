@@ -93,11 +93,9 @@ class TestData():
             rating_list.append(self.train_data[data_idx][2]) # (batch_size, 1)
 
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
-            review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
             real_review_list.append(self.train_data[data_idx][5]) #(batch_size, seq_length) real review without PAD
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.LongTensor(review_input_list).cuda(), \
-        torch.LongTensor(review_output_list).cuda(), \
         torch.LongTensor(real_review_list).cuda()

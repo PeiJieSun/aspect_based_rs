@@ -5,7 +5,7 @@ import torch.utils.data as data
 
 import numpy as np
 
-from time import time
+from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
@@ -13,6 +13,9 @@ import DataModule_fm as data_utils
 import config_fm as conf
 
 from Logging import Logging
+
+def now():
+    return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
     import os
@@ -39,7 +42,7 @@ if __name__ == '__main__':
 
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.8)
 
     ########################### FIRST TRAINING #####################################
     check_dir('%s/train_%s_fm_id_x.log' % (conf.out_path, conf.data_name))
@@ -93,13 +96,12 @@ if __name__ == '__main__':
 
         train_loss, val_loss, test_loss = np.sqrt(np.mean(train_loss)), np.sqrt(np.mean(val_loss)), np.sqrt(np.mean(test_loss))
 
-        '''
         if epoch == 1:
             min_loss = val_loss
         if val_loss < min_loss:
-            torch.save(model.state_dict(), train_model_path)
+            #torch.save(model.state_dict(), train_model_path)
+            best_epoch = epoch
         min_loss = min(val_loss, min_loss)
-        '''
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
@@ -108,9 +110,14 @@ if __name__ == '__main__':
         log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
         log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
+        '''
         log.record('user embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.user_embedding.weight).item(), torch.var(model.user_embedding.weight).item()))
         log.record('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.item_embedding.weight).item(), torch.var(model.item_embedding.weight).item()))
-        
+        '''
         #import sys; sys.exit(0)
+
+    log.record("----"*20)
+    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record("----"*20)

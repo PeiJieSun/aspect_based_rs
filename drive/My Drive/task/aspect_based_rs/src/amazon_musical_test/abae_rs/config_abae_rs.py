@@ -2,9 +2,9 @@ vocab_sz = 4276
 word_dim = 200
 batch_size = 256
 
-learning_rate = 1e-3
+learning_rate = 0.002
 
-train_epochs = 60
+train_epochs = 30
 
 asp_dim = 15
 num_neg_sent = 4
@@ -31,3 +31,12 @@ mf_dim = 32
 
 dropout = 0.5
 avg_rating = 4.4848
+
+
+#### NCF parameters ####
+gmf_embed_dim = 32
+mlp_embed_dim = 32
+
+mlp_dim_list = [64, 128, 64, 32]
+
+weight_decay = 0.02

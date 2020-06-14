@@ -9,10 +9,11 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_ncf as data_utils
-import config_ncf as conf
+model_name = 'mrg'
+sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/%s' % model_name)
 
-from Logging import Logging
+exec('import DataModule_%s as data_utils' % model_name)
+exec('import config_%s as conf' % model_name)
 
 def now():
     return str(strftime('%Y-%m-%d %H:%M:%S'))
@@ -30,35 +31,37 @@ if __name__ == '__main__':
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
     t0 = time()
-    train_data, val_data, test_data = data_utils.load_all()
+    data_set = data_utils.load_all()
+    train_data, val_data, test_data = data_set[0], data_set[1], data_set[2]
     t1 = time()
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
     
     ############################## CREATE MODEL ##############################
-    from ncf import ncf
-    model = ncf()
+
+    model_name = 'probe'
+    exec('from %s import %s' % (model_name, model_name))
+    exec('model = %s()' % model_name)
 
     #import pdb; pdb.set_trace()
     
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_pmf_id_X1.mod'))
     model.cuda()
-    #optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
 
     ########################### FIRST TRAINING #####################################
-    check_dir('%s/train_%s_ncf_id_x.log' % (conf.out_path, conf.data_name))
-    log = Logging('%s/train_%s_ncf_id_X1.log' % (conf.out_path, conf.data_name))
-    train_model_path = '%s/train_%s_ncf_id_X1.mod' % (conf.out_path, conf.data_name)
-
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
-    val_dataset = data_utils.TrainData(val_data)
-    test_dataset = data_utils.TrainData(test_data)
+    train_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
-    train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    val_dataset = data_utils.TrainData(val_data)
+    val_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+
+    test_dataset = data_utils.TrainData(test_data)
+    test_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
     min_loss = 0
@@ -68,7 +71,9 @@ if __name__ == '__main__':
 
         train_loss, train_prediction = [], []
         for batch_idx_list in train_batch_sampler:
-            user_list, item_list, rating_list = train_dataset.get_batch(batch_idx_list)
+            values = train_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list = values[0], values[1], values[2]
+
             prediction, obj_loss, mse_loss = model(user_list, item_list, rating_list)
             #import pdb; pdb.set_trace()
             train_loss.extend(tensorToScalar(mse_loss))
@@ -82,7 +87,9 @@ if __name__ == '__main__':
         
         val_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
-            user_list, item_list, rating_list = val_dataset.get_batch(batch_idx_list)
+            values = val_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list = values[0], values[1], values[2]
+
             prediction, _, mse_loss = model(user_list, item_list, rating_list)    
             val_loss.extend(tensorToScalar(mse_loss))
             val_prediction.extend(tensorToScalar(prediction))
@@ -90,7 +97,9 @@ if __name__ == '__main__':
 
         test_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
-            user_list, item_list, rating_list = test_dataset.get_batch(batch_idx_list)
+            values = test_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list = values[0], values[1], values[2]
+
             prediction, _, mse_loss = model(user_list, item_list, rating_list)    
             test_loss.extend(tensorToScalar(mse_loss))
             test_prediction.extend(tensorToScalar(prediction))
@@ -101,26 +110,23 @@ if __name__ == '__main__':
         if epoch == 1:
             min_rating_loss = val_loss
         if val_loss < min_rating_loss:
-            #torch.save(model.state_dict(), train_model_path)
-            #print('save model')
             best_epoch = epoch
         min_rating_loss = min(val_loss, min_rating_loss)
         
-        log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
-        log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
+        print('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
+        print('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))
 
-        log.record('Train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
-        log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
-        log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
+        print('Train prediction mean:%.4f, var:%.4f' % (np.mean(train_prediction), np.var(train_prediction)))
+        print('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
+        print('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
         '''
-        log.record('user embedding mean:%.4f, var:%.4f' % \
+        print('user embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.embedding_user.weight).item(), torch.var(model.embedding_user.weight).item()))
-        log.record('item embedding mean:%.4f, var:%.4f' % \
+        print('item embedding mean:%.4f, var:%.4f' % \
             (torch.mean(model.embedding_item.weight).item(), torch.var(model.embedding_item.weight).item()))
         '''
-        #import pdb; pdb.set_trace()
 
-    log.record("----"*20)
-    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
-    log.record("----"*20)
+    print("----"*20)
+    print(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    print("----"*20)
