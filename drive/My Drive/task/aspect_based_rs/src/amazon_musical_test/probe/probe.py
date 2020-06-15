@@ -24,7 +24,9 @@ class probe(nn.Module):
         self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
         self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1))
 
-    def forward(self, user, item, label, *argv):
+    def forward(self, values):
+        user, item, label = values[0], values[1], values[2]
+
         user_emb = self.embedding_user(user)
         item_emb = self.embedding_item(item)
 
@@ -40,5 +42,9 @@ class probe(nn.Module):
 
         #import pdb; pdb.set_trace()
 
-        #return prediction.view(-1), obj_loss, mse_loss
-        return mse_loss, obj_loss
+        return prediction.view(-1), mse_loss, obj_loss
+        #return mse_loss, obj_loss
+
+    def predict_rating(self, values):
+        prediction, mse_loss, obj_loss = self.forward(values)
+        return mse_loss

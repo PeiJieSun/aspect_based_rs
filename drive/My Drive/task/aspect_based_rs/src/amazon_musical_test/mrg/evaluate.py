@@ -8,7 +8,7 @@ PAD = 0
 def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
-'''
+
 def evaluate(test_dataset, test_batch_sampler, model):
     bleu_score = []
     bleu_list_1, bleu_list_2, bleu_list_3, bleu_list_4 = [], [], [], []
@@ -25,11 +25,11 @@ def evaluate(test_dataset, test_batch_sampler, model):
                 if word == PAD:
                     break
             hyp = hyp[:clip_idx]
-            hyp_ref_list.append([hyp.tolist(), [real_review[record_idx]]])
+            hyp_ref_list.append([hyp.tolist(), [tensorToScalar(real_review[record_idx])]])
 
     
     for [hyp, ref] in hyp_ref_list:
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         try:
             bleu_score = compute_bleu([hyp], [ref])
             bleu_list_1.append(bleu_score[1])
@@ -87,3 +87,4 @@ def evaluate(test_dataset, test_batch_sampler, model):
     print('rouge_L_f:%.4f' % np.mean(rouge_L_list))
 
     return np.mean(bleu_list_4), np.mean(rouge_L_list)
+'''

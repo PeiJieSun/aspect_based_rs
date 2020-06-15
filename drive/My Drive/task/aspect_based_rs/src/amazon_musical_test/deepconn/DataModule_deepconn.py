@@ -20,7 +20,6 @@ test_data_path = '%s/%s.test.data' % (conf.target_path, conf.data_name)
 
 def load_all():
     user_doc_dict, item_doc_dict = defaultdict(list), defaultdict(list)
-    user_review_dict, item_review_dict = defaultdict(list), defaultdict(list)
 
     train_data = {}
     f = open(train_data_path)

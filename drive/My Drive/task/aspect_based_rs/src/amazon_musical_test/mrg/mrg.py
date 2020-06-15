@@ -134,7 +134,7 @@ class mrg(nn.Module):
 
         return rating_out_loss
     
-    '''
+
     def _sample_text_by_top_one(self, user, item, review_input):
         hidden_state, mlp_concat_emebd = self.encoder(user, item)
         mlp_concat_emebd = mlp_concat_emebd.view(1, -1, conf.mlp_dim_list[-1])
@@ -144,6 +144,7 @@ class mrg(nn.Module):
         sample_idx_list = [next_word_idx]
         for _ in range(conf.rev_len):
             input_vector = self.word_embedding(next_word_idx).reshape(1, -1, conf.word_dim)
+            #import  pdb; pdb.set_trace()
             input_vector = torch.cat([input_vector, mlp_concat_emebd], dim=2)
 
             output, hidden_state = self.decoder_review(input_vector, hidden_state)
@@ -177,6 +178,7 @@ class mrg(nn.Module):
             sample_idx_list.append(next_word_idx.item())
 
         return sample_idx_list
+    '''
     
     '''
     def _sample_text_by_beam_search(self, user, item, review_input):

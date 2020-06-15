@@ -9,7 +9,7 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-model_name = 'mrg'
+model_name = 'cf_gcn'
 sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/%s' % model_name)
 
 exec('import DataModule_%s as data_utils' % model_name)
@@ -72,12 +72,12 @@ if __name__ == '__main__':
         train_loss, train_prediction = [], []
         for batch_idx_list in train_batch_sampler:
             values = train_dataset.get_batch(batch_idx_list)
-            user_list, item_list, rating_list = values[0], values[1], values[2]
 
-            prediction, obj_loss, mse_loss = model(user_list, item_list, rating_list)
+            prediction, mse_loss, obj_loss = model(values)
             #import pdb; pdb.set_trace()
             train_loss.extend(tensorToScalar(mse_loss))
             train_prediction.extend(tensorToScalar(prediction))
+
             model.zero_grad(); obj_loss.backward(); optimizer.step()
         t1 = time()
 
@@ -88,9 +88,8 @@ if __name__ == '__main__':
         val_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
             values = val_dataset.get_batch(batch_idx_list)
-            user_list, item_list, rating_list = values[0], values[1], values[2]
 
-            prediction, _, mse_loss = model(user_list, item_list, rating_list)    
+            prediction, mse_loss, _ = model(values)    
             val_loss.extend(tensorToScalar(mse_loss))
             val_prediction.extend(tensorToScalar(prediction))
         t2 = time()
@@ -98,9 +97,8 @@ if __name__ == '__main__':
         test_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
             values = test_dataset.get_batch(batch_idx_list)
-            user_list, item_list, rating_list = values[0], values[1], values[2]
 
-            prediction, _, mse_loss = model(user_list, item_list, rating_list)    
+            prediction, mse_loss, _ = model(values)    
             test_loss.extend(tensorToScalar(mse_loss))
             test_prediction.extend(tensorToScalar(prediction))
         t3 = time()

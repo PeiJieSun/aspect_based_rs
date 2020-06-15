@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # construct review validate dataset
     review_val_dataset = data_utils.TestData(val_data)
     review_val_sampler = data.BatchSampler(data.RandomSampler(\
-        range(review_val_dataset.length)), batch_size=1, drop_last=False)
+        range(review_val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
     max_bleu = 0.0
