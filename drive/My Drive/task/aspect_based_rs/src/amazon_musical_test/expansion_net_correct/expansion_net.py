@@ -64,7 +64,7 @@ class encoder(nn.Module):
         #hidden_state = (u_vector + v_vector + outputs[-1]).view(\
         #    1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
-        #hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
         hidden_state = (u_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
         #hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() # (1, 1, hidden_dim)
@@ -80,9 +80,9 @@ class decoder(nn.Module):
         self.linear_eq_8 = nn.Linear(2*conf.hidden_dim, 1)
         self.linear_eq_10 = nn.Linear(conf.att_dim+conf.hidden_dim, 1)
         self.linear_eq_11 = nn.Linear(2*conf.aspect_dim, conf.aspect_dim)
-        self.linear_eq_12 = nn.Linear(0*conf.aspect_dim+1*conf.word_dim+1*conf.hidden_dim, conf.aspect_dim)
-        self.linear_eq_13 = nn.Linear(1*conf.hidden_dim+1*conf.att_dim, conf.vocab_sz)
-        #self.linear_eq_13 = nn.Linear(conf.hidden_dim, conf.vocab_sz)
+        self.linear_eq_12 = nn.Linear(conf.aspect_dim+conf.word_dim+conf.hidden_dim, conf.aspect_dim)
+        #self.linear_eq_13 = nn.Linear(2*conf.hidden_dim+conf.att_dim, conf.vocab_sz)
+        self.linear_eq_13 = nn.Linear(conf.hidden_dim, conf.vocab_sz)
 
         self.linear_x = nn.Linear(conf.hidden_dim, conf.vocab_sz)
 
@@ -153,20 +153,17 @@ class decoder(nn.Module):
         #a_3_t = torch.tanh(self.linear_eq_12(torch.cat([s_ui, \
         #    input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
         
-        #a_3_t = (self.linear_eq_12(torch.cat([s_ui, \
-        #    input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
-        a_3_t = (self.linear_eq_12(torch.cat([input_vector.view(-1, conf.word_dim), \
-            hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
+        a_3_t = (self.linear_eq_12(torch.cat([s_ui, \
+            input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
 
         #PvWt = torch.tanh(self.linear_eq_13(torch.cat([hidden_state.view(-1, conf.hidden_dim), a_1_t, a_2_t], dim=1))) # (batch, vocab_size)
-        PvWt = self.linear_eq_13(torch.cat([hidden_state.view(-1, conf.hidden_dim), a_2_t], dim=1)) # (batch, vocab_size)
 
         aspect_probit = torch.index_select(a_3_t, 1, review_aspect) * review_aspect_mask # (seq_length*batch_size, vocab_sz)
 
-        #word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
+        word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
 
-        return PvWt + aspect_probit, hidden_state
-        #return PvWt, hidden_state
+        #return PvWt + aspect_probit, hidden_state
+        return word_probit, hidden_state
 
 class expansion_net(nn.Module):
     def __init__(self):
@@ -206,7 +203,6 @@ class expansion_net(nn.Module):
 
         return obj_loss
 
-    '''
     def _sample_text_by_top_one(self, user, item, summary, review_input, review_aspect, review_aspect_mask):
         encoder_outputs, gamma_u, gamma_i, beta_u, beta_i, hidden_state = \
             self.encoder(user, item, summary)
@@ -232,38 +228,7 @@ class expansion_net(nn.Module):
             next_word_idx = torch.argmax(total_word_probit, 1)
             if next_word_idx.item() == PAD:
                 return sample_idx_list
-                
-            sample_idx_list.append(next_word_idx.item())
-        return sample_idx_list
-    '''
-
-    def _sample_text_by_top_one(self, user, item, summary, review_input, review_aspect, review_aspect_mask):
-        encoder_summary, gamma_u, gamma_i, beta_u, beta_i, hidden_state = \
-            self.encoder(user, item, summary)
-        
-        next_word_idx = review_input[0]
-
-        sample_idx_list = [next_word_idx]
-        for _ in range(conf.rev_len):
-            input_vector = self.word_embedding(next_word_idx).view(1, user.shape[0], -1)
-            
-            total_word_prob, hidden_state = self.decoder(
-                input_vector, 
-                hidden_state,
-                encoder_summary, 
-                summary,
-                gamma_u,
-                gamma_i,
-                beta_u, 
-                beta_i, 
-                review_aspect, 
-                review_aspect_mask,
-            )
-
-            next_word_idx = torch.argmax(total_word_prob, 1)
             
             #import pdb; pdb.set_trace()
-            sample_idx_list.append(next_word_idx)
-
-        sample_idx_list = torch.stack(sample_idx_list, dim=0).transpose(0, 1)
+            sample_idx_list.append(next_word_idx.item())
         return sample_idx_list

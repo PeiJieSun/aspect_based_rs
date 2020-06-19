@@ -18,7 +18,7 @@ out_path = '%s/out/%s' % (root_path, data_name)
 model_path = '%s/out/model' % root_path
 
 seq_len = 11
-sent_num = 8
+#sent_num = 8
 summary_len = 8
 
 user_seq_num = 8

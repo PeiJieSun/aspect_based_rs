@@ -40,11 +40,7 @@ def load_all():
         user, item, rating, g_review, summary = \
             line['user'], line['item'], line['rating'], line['g_review'], line['summary']
         review_in, review_out, summary = generate_review(g_review, summary)
-        #train_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
-
-        g_review = g_review[:conf.rev_len]
-        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
-        train_data[idx] = [user, item, rating, review_in, review_out, summary, g_review]
+        train_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
 
         max_user = max(max_user, user)
         max_item = max(max_item, item)
@@ -56,12 +52,8 @@ def load_all():
         user, item, rating, g_review, summary = \
             line['user'], line['item'], line['rating'], line['g_review'], line['summary']
         review_in, review_out, summary = generate_review(g_review, summary)
-        #val_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
-
-        g_review = g_review[:conf.rev_len]
-        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
-        val_data[idx] = [user, item, rating, review_in, review_out, summary, g_review]
-
+        val_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
+    
     test_data = {}
     f = open(test_data_path)
     for idx, line in enumerate(f):
@@ -69,12 +61,8 @@ def load_all():
         user, item, rating, g_review, summary = \
             line['user'], line['item'], line['rating'], line['g_review'], line['summary']
         review_in, review_out, summary = generate_review(g_review, summary)
-        #test_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
-        
-        g_review = g_review[:conf.rev_len]
-        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
-        test_data[idx] = [user, item, rating, review_in, review_out, summary, g_review]
-
+        test_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
+    
     print('max_user:%d, max_item:%d' % (max_user, max_item))
     return train_data, val_data, test_data
     

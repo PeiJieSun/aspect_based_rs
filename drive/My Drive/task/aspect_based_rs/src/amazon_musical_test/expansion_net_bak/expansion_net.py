@@ -57,19 +57,20 @@ class encoder(nn.Module):
 
         summary_emb = self.word_embedding(summary) #(seq_len, batch, word_dim)
         summary_emb = F.dropout(summary_emb, p=conf.dropout)
-        outputs, _ = self.rnn(summary_emb) #(seq_len, batch, hidden_dim)
+        encoder_summary, _ = self.rnn(summary_emb) #(seq_len, batch, hidden_dim)
         
         #import pdb; pdb.set_trace()
 
-        #hidden_state = (u_vector + v_vector + outputs[-1]).view(\
-        #    1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        '''
+        hidden_state = (u_vector + v_vector + encoder_summary[-1]).view(\
+            1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        '''
 
-        #hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
-        hidden_state = (u_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
-        #hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() # (1, 1, hidden_dim)
+        #hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda()
 
-        return outputs, gamma_u, gamma_i, beta_u, beta_i, hidden_state
+        return encoder_summary, gamma_u, gamma_i, beta_u, beta_i, hidden_state
 
 class decoder(nn.Module):
     def __init__(self, word_embedding):
@@ -80,11 +81,11 @@ class decoder(nn.Module):
         self.linear_eq_8 = nn.Linear(2*conf.hidden_dim, 1)
         self.linear_eq_10 = nn.Linear(conf.att_dim+conf.hidden_dim, 1)
         self.linear_eq_11 = nn.Linear(2*conf.aspect_dim, conf.aspect_dim)
-        self.linear_eq_12 = nn.Linear(0*conf.aspect_dim+1*conf.word_dim+1*conf.hidden_dim, conf.aspect_dim)
-        self.linear_eq_13 = nn.Linear(1*conf.hidden_dim+1*conf.att_dim, conf.vocab_sz)
-        #self.linear_eq_13 = nn.Linear(conf.hidden_dim, conf.vocab_sz)
+        self.linear_eq_12 = nn.Linear(conf.aspect_dim+conf.word_dim+conf.hidden_dim, conf.aspect_dim)
+        self.linear_eq_13 = nn.Linear(2*conf.hidden_dim+conf.att_dim, conf.vocab_sz)
+        #self.linear_eq_13 = nn.Linear(conf.hidden_dim, conf.gen_vocab_sz)
 
-        self.linear_x = nn.Linear(conf.hidden_dim, conf.vocab_sz)
+        self.linear_x = nn.Linear(conf.hidden_dim, conf.gen_vocab_sz)
 
         self.reinit()
 
@@ -127,7 +128,7 @@ class decoder(nn.Module):
     def forward(self, 
             input_vector, 
             hidden_state, 
-            encoder_outputs, 
+            encoder_summary, 
             summary,
             gamma_u,
             gamma_i,
@@ -140,56 +141,57 @@ class decoder(nn.Module):
 
         _, hidden_state = self.rnn(input_vector, hidden_state)
 
+
+        ######### following code is used to calculate word  probability
         # calculate a^1_t
         mask = (summary > 0).long()
-        a_1_t = self._attention(encoder_outputs, hidden_state, mask, self.linear_eq_8) # (batch, hidden_dim)
+        a_1_t = self._attention(encoder_summary, hidden_state, mask, self.linear_eq_8) # (batch, hidden_dim)
 
         # calculate a^2_t
         mask = torch.ones(2, gamma_u.shape[0]).cuda()
         a_2_t = self._attention(torch.stack([gamma_u, gamma_i], dim=0), hidden_state, mask, self.linear_eq_10) #(batch, att_dim)
+        PvWt = self.linear_eq_13(torch.cat([hidden_state.view(-1, conf.hidden_dim), a_1_t, a_2_t], dim=1)) # (batch, vocab_size)
 
+
+        ######### following code is used to calculate aspect probability
         # calculate a^3_t
         s_ui = self.linear_eq_11(torch.cat([beta_u, beta_i], dim=1)) # (batch, aspect_dim)
         #a_3_t = torch.tanh(self.linear_eq_12(torch.cat([s_ui, \
         #    input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
         
-        #a_3_t = (self.linear_eq_12(torch.cat([s_ui, \
-        #    input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
-        a_3_t = (self.linear_eq_12(torch.cat([input_vector.view(-1, conf.word_dim), \
-            hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
+        a_3_t = (self.linear_eq_12(torch.cat([s_ui, \
+            input_vector.view(-1, conf.word_dim), hidden_state.view(-1, conf.hidden_dim)], dim=1))) # (batch, aspect_dim)
 
-        #PvWt = torch.tanh(self.linear_eq_13(torch.cat([hidden_state.view(-1, conf.hidden_dim), a_1_t, a_2_t], dim=1))) # (batch, vocab_size)
-        PvWt = self.linear_eq_13(torch.cat([hidden_state.view(-1, conf.hidden_dim), a_2_t], dim=1)) # (batch, vocab_size)
+        aspect_prob = torch.index_select(a_3_t, 1, review_aspect) * review_aspect_mask # (seq_length*batch_size, vocab_sz)
 
-        aspect_probit = torch.index_select(a_3_t, 1, review_aspect) * review_aspect_mask # (seq_length*batch_size, vocab_sz)
 
-        #word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
+        ######### following code is used to test hidden_state => vocab space
+        word_prob = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
 
-        return PvWt + aspect_probit, hidden_state
-        #return PvWt, hidden_state
+        return PvWt + 0.0*aspect_prob, hidden_state
+        #return word_prob + 0.0*aspect_prob, hidden_state
 
 class expansion_net(nn.Module):
     def __init__(self):
         super(expansion_net, self).__init__()
 
         # PARAMETERS FOR LSTM
-        torch.manual_seed(0); self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dim)
+        torch.manual_seed(0); self.word_embedding = nn.Embedding(conf.gen_vocab_sz, conf.word_dim)
         
         self.encoder = encoder(self.word_embedding)
         self.decoder = decoder(self.word_embedding)
 
     def forward(self, user, item, summary, review_input, review_output, review_aspect, review_aspect_mask):
-        encoder_outputs, gamma_u, gamma_i, beta_u, beta_i, hidden_state = \
-            self.encoder(user, item, summary)
+        encoder_summary, gamma_u, gamma_i, beta_u, beta_i, hidden_state \
+            = self.encoder(user, item, summary)
 
         Pwt = []
         for t in range(conf.rev_len):
             input_vector = self.word_embedding(review_input[t]).view(1, -1, conf.word_dim) # (1, batch, hidden_dim)
-            
-            total_word_probit, hidden_state = self.decoder(
+            total_word_prob, hidden_state = self.decoder(
                 input_vector, 
                 hidden_state,
-                encoder_outputs, 
+                encoder_summary, 
                 summary,
                 gamma_u,
                 gamma_i,
@@ -199,43 +201,12 @@ class expansion_net(nn.Module):
                 review_aspect_mask,
             )
 
-            Pwt.append(total_word_probit)
+            Pwt.append(total_word_prob)
 
         Pwt = torch.cat(Pwt, dim=0)
         obj_loss = F.cross_entropy(Pwt, review_output.reshape(-1))
 
         return obj_loss
-
-    '''
-    def _sample_text_by_top_one(self, user, item, summary, review_input, review_aspect, review_aspect_mask):
-        encoder_outputs, gamma_u, gamma_i, beta_u, beta_i, hidden_state = \
-            self.encoder(user, item, summary)
-        
-        next_word_idx = review_input[0][0].view(1, 1)
-        sample_idx_list = [next_word_idx.item()]
-        for _ in range(conf.rev_len):
-            input_vector = self.word_embedding(next_word_idx).reshape(1, 1, -1)
-
-            total_word_probit, hidden_state = self.decoder(
-                input_vector, 
-                hidden_state,
-                encoder_outputs, 
-                summary,
-                gamma_u,
-                gamma_i,
-                beta_u, 
-                beta_i, 
-                review_aspect, 
-                review_aspect_mask,
-            )
-
-            next_word_idx = torch.argmax(total_word_probit, 1)
-            if next_word_idx.item() == PAD:
-                return sample_idx_list
-                
-            sample_idx_list.append(next_word_idx.item())
-        return sample_idx_list
-    '''
 
     def _sample_text_by_top_one(self, user, item, summary, review_input, review_aspect, review_aspect_mask):
         encoder_summary, gamma_u, gamma_i, beta_u, beta_i, hidden_state = \
@@ -261,8 +232,7 @@ class expansion_net(nn.Module):
             )
 
             next_word_idx = torch.argmax(total_word_prob, 1)
-            
-            #import pdb; pdb.set_trace()
+                
             sample_idx_list.append(next_word_idx)
 
         sample_idx_list = torch.stack(sample_idx_list, dim=0).transpose(0, 1)

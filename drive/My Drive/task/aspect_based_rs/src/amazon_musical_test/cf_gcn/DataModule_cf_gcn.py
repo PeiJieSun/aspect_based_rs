@@ -115,11 +115,12 @@ class TrainData():
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
             review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
 
+            
             user, item = self.train_data[data_idx][0], self.train_data[data_idx][1]
             #import pdb; pdb.set_trace()
             user_doc_list.append(self.user_doc_dict[user])
             item_doc_list.append(self.item_doc_dict[item])
-
+            
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \

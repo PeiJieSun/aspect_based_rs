@@ -9,7 +9,7 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-model_name = 'cf_gcn'
+model_name = 'expansion_net'
 sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/%s' % model_name)
 
 exec('import DataModule_%s as data_utils' % model_name)

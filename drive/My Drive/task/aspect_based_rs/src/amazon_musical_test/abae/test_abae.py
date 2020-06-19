@@ -19,7 +19,7 @@ def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
 if __name__ == '__main__':
-    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_musical_test/train_amazon_musical_test_abae_id_X1.mod')
+    aspect_params = torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_musical_test/train_amazon_musical_test_abae_id_X.mod')
     c = aspect_params['transform_T.weight'].transpose(0, 1) # (aspect_dimesion, word_dimension)
 
     k_means_weight = np.load('%s/%s.k_means_15.npy' % (conf.target_path, conf.data_name))
