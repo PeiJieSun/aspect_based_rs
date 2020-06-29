@@ -52,9 +52,12 @@ if __name__ == '__main__':
     val_dataset = data_utils.TrainData(val_data, user_doc_dict, item_doc_dict)
     test_dataset = data_utils.TrainData(test_data, user_doc_dict, item_doc_dict)
 
-    train_batch_sampler = data.BatchSampler(data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    val_batch_sampler = data.BatchSampler(data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    test_batch_sampler = data.BatchSampler(data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    train_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    val_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    test_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
     min_rating_loss = 0

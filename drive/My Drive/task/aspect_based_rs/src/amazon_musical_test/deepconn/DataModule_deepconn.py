@@ -92,14 +92,14 @@ class TrainData():
             item_list.append(item)
             rating_list.append(self.train_data[data_idx][2])
             
-            #user_doc.append(self.user_doc_dict[user])
-            #item_doc.append(self.item_doc_dict[item])
+            user_doc.append(self.user_doc_dict[user])
+            item_doc.append(self.item_doc_dict[item])
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \
-        #torch.LongTensor(np.array(user_doc)).cuda(),\
-        #torch.LongTensor(np.array(item_doc)).cuda()
+        torch.LongTensor(np.array(user_doc)).cuda(),\
+        torch.LongTensor(np.array(item_doc)).cuda()
 '''
 
 PAD = 0; SOS = 1; EOS = 2
