@@ -124,7 +124,7 @@ class mrg(nn.Module):
         review_out_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD, reduction='none')
         review_obj_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD)
 
-        obj = 1e-4 * rating_obj_loss + 1.0 * review_obj_loss
+        obj = 1.0 * rating_obj_loss + 1e-10 * review_obj_loss
         #return rating_out_loss, review_out_loss, obj
 
         return rating_out_loss, review_out_loss, obj
