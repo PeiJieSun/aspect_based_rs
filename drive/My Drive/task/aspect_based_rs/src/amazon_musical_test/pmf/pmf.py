@@ -7,8 +7,8 @@ import config_pmf as conf
 class pmf(nn.Module):
     def __init__(self):
         super(pmf, self).__init__()
-        self.embedding_user = nn.Embedding(conf.num_users, conf.mf_dim)
-        self.embedding_item = nn.Embedding(conf.num_items, conf.mf_dim)
+        torch.manual_seed(0); self.embedding_user = nn.Embedding(conf.num_users, conf.mf_dim)
+        torch.manual_seed(0); self.embedding_item = nn.Embedding(conf.num_items, conf.mf_dim)
 
         self.user_bias = nn.Embedding(conf.num_users, 1)
         self.item_bias = nn.Embedding(conf.num_items, 1)

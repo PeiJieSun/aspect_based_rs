@@ -42,6 +42,9 @@ if __name__ == '__main__':
     model_params['encoder.transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (word_dim,  asp_dim)
     
     model.load_state_dict(model_params)
+
+    model.encoder.word_embedding.weight.requires_grad = False
+    model.encoder.transform_T.weight.requires_grad = False
     
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
