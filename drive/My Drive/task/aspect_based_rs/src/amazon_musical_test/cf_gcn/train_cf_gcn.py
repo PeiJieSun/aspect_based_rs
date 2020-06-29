@@ -150,7 +150,7 @@ if __name__ == '__main__':
             t3 = time()
             test_bleu_4, test_rouge_L_f = evaluate(review_test_dataset, review_test_sampler, model)
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t2)))
-            log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, val_rouge_L_f))
+            log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (test_bleu_4, test_rouge_L_f))
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('NLL Train loss:{:.4f}'.format(np.mean(train_review_loss)))
