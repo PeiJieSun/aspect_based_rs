@@ -108,7 +108,7 @@ class gru(nn.Module):
         obj = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD)
 
         return out_loss, obj
-    '''
+    
     def _sample_text_by_top_one(self, user, item, review_input):
         hidden_state = self.encoder(user, item)
 
@@ -155,7 +155,7 @@ class gru(nn.Module):
                 
             sample_idx_list.append(next_word_idx.item())
         return sample_idx_list
-    
+    '''
 
     '''
     def _sample_text_by_beam_search(self, user, item, review_input):

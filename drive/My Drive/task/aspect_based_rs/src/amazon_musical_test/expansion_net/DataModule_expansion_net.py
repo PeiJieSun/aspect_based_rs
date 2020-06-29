@@ -58,6 +58,9 @@ def load_all():
         review_in, review_out, summary = generate_review(g_review, summary)
         #val_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
 
+        #if user == 950 and item == 837:
+        #    import pdb; pdb.set_trace()
+
         g_review = g_review[:conf.rev_len]
         g_review.extend([PAD]*(conf.rev_len-len(g_review)))
         val_data[idx] = [user, item, rating, review_in, review_out, summary, g_review]
@@ -70,7 +73,7 @@ def load_all():
             line['user'], line['item'], line['rating'], line['g_review'], line['summary']
         review_in, review_out, summary = generate_review(g_review, summary)
         #test_data[idx] = [user, item, rating, review_in, review_out, summary, g_review[:conf.rev_len]]
-        
+
         g_review = g_review[:conf.rev_len]
         g_review.extend([PAD]*(conf.rev_len-len(g_review)))
         test_data[idx] = [user, item, rating, review_in, review_out, summary, g_review]
@@ -88,7 +91,6 @@ class TrainData():
     def get_batch(self, batch_idx_list):
         user_list, item_list, rating_list = [], [], []
         review_input_list, review_output_list = [], []
-        summary_list = []
         review_aspect_bool_list, review_aspect_list = [], []
 
         for data_idx in batch_idx_list:
@@ -99,15 +101,11 @@ class TrainData():
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
             review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
 
-            summary_list.append(self.train_data[data_idx][5]) # (batch_size, sum_len)
-
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \
         torch.LongTensor(np.transpose(review_input_list)).cuda(), \
-        torch.LongTensor(np.transpose(review_output_list)).cuda(), \
-        torch.LongTensor(np.transpose(summary_list)).cuda()
-
+        torch.LongTensor(np.transpose(review_output_list)).cuda()
 
     def construct_aspect_voab(self):
         aspect_vocab = {}
@@ -148,17 +146,16 @@ class TrainData():
         #import pdb; pdb.set_trace()
         self.aspect_vocab = aspect_vocab
 
-        review_aspect, review_aspect_mask = [], []
+        review_aspect_index, review_aspect_value = [], []
         for word_idx in range(conf.vocab_sz):
             if word_idx in aspect_vocab:
-                review_aspect.append(aspect_vocab[word_idx])
-                review_aspect_mask.append(1)
-            else:
-                review_aspect.append(0)
-                review_aspect_mask.append(0)
+                review_aspect_index.append([word_idx, aspect_vocab[word_idx]])
+                review_aspect_value.append(1)
 
-        return torch.LongTensor(review_aspect).cuda(), \
-            torch.LongTensor(review_aspect_mask).view(1, -1).cuda()
+        #import pdb; pdb.set_trace()
+
+        return torch.LongTensor(review_aspect_index).cuda(), \
+            torch.FloatTensor(review_aspect_value).cuda()
 
     def count_aspect_words(self):
         aspect_count = 0
@@ -168,7 +165,6 @@ class TrainData():
                 if word_id in self.aspect_vocab:
                     aspect_count += 1
         return aspect_count
-
 
 class TestData():
     def __init__(self, test_data):

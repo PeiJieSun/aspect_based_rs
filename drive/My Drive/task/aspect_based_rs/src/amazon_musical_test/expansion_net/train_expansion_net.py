@@ -32,11 +32,16 @@ if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
     from expansion_net import expansion_net
     model = expansion_net()
-    
+
+    #sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/gru_lm')
+    #from gru_x import gru
+    #model = gru()
+
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/model/train_amazon_clothing_expansion_net_id_33.mod'))
     model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
@@ -52,57 +57,63 @@ if __name__ == '__main__':
 
     # prepare data for the training stage
     train_dataset = data_utils.TrainData(train_data)
-    train_batch_sampler = data.BatchSampler(\
-        data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    train_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
+    
     val_dataset = data_utils.TestData(val_data)
-    val_batch_sampler = data.BatchSampler(\
-        data.SequentialSampler(range(val_dataset.length)), batch_size=1, drop_last=False)
+    val_batch_sampler = data.BatchSampler(data.SequentialSampler(\
+        range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    
+    train_dataset.construct_aspect_voab()
+    aspect_count = train_dataset.count_aspect_words()
+    #log.record('The number of the words which are aspect words is:%d' % aspect_count)
+
+    review_aspect_index, review_aspect_value = train_dataset.construct_aspect_voab()
+    review_aspect_mask = torch.sparse.FloatTensor(review_aspect_index.t(), \
+        review_aspect_value, torch.Size([conf.gen_vocab_sz, conf.aspect_dim]))
 
     # Start Training !!!
     max_bleu = 0.0
     for epoch in range(1, conf.train_epochs+1):
         t0 = time()
 
-        train_dataset.construct_aspect_voab()
-        aspect_count = train_dataset.count_aspect_words()
-        #log.record('The number of the words which are aspect words is:%d' % aspect_count)
-
-        review_aspect, review_aspect_mask = train_dataset.construct_aspect_voab()
 
         model.train()
 
-        train_loss = []
-        train_ref, train_hyp = [], []
+        #import pdb; pdb.set_trace()
+        train_review_loss = []
         for batch_idx_list in train_batch_sampler:
-            user, item, label, review_input, review_output, summary = \
+            
+            user_list, item_list, _, review_input_list, review_output_list =\
                 train_dataset.get_batch(batch_idx_list)
-            generation_loss = model(user, item, summary, review_input, \
-                review_output, review_aspect, review_aspect_mask)
-            train_loss.append(generation_loss.item())
-            model.zero_grad(); generation_loss.backward(); optimizer.step()
-        t1 = time()
-        train_loss = np.mean(train_loss)
-        
-        log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
-        log.record('Train:{:.4f}'.format(train_loss))
+            out_loss, obj = model(user_list, item_list, review_input_list, \
+                review_output_list, review_aspect_mask)
 
-        # evaluate the performance of the model with following xxx 
+            train_review_loss.extend(tensorToScalar(out_loss))
+            model.zero_grad(); obj.backward(); optimizer.step()
+            #import pdb; pdb.set_trace()
+        t1 = time()
+
+        # evaluate the performance of the model with following code
         model.eval()
         
         if epoch % 5 == 0:
-            val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, \
-                model, review_aspect, review_aspect_mask)
-            torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
-
-            if val_bleu_4 > max_bleu:
+            val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, model, review_aspect_mask)
+        
+            if (val_bleu_4+rouge_L_f) > max_bleu:
+                torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
                 best_epoch = epoch
-            max_bleu = max(max_bleu, val_bleu_4)
+            max_bleu = max(max_bleu, (val_bleu_4+rouge_L_f))
 
             t2 = time()
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t2-t1)))
             log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, rouge_L_f))
+        
+        log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
+        log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
 
+        #import sys; sys.exit()
     log.record("----"*20)
     log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
     log.record("----"*20)

@@ -70,7 +70,7 @@ g_vocab, g_vocab_decoder = {}, {}
 for word_id, word in enumerate(word_list):
     g_vocab[word] = word_id + 3
     g_vocab_decoder[word_id + 3] = word
-g_vocab['pad'] = 0; g_vocab_decoder[0] = 'pad'
+g_vocab['padx'] = 0; g_vocab_decoder[0] = 'padx'
 g_vocab['sos'] = 1; g_vocab_decoder[1] = 'sos'
 g_vocab['eos'] = 2; g_vocab_decoder[2] = 'eos'
 

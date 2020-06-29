@@ -9,10 +9,15 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
+'''
+sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/expansion_net')
+import DataModule_expansion_net as data_utils
+import config_expansion_net as conf
+'''
 import DataModule_gru as data_utils
 import config_gru as conf
 
-from evaluate import evaluate
+from evaluate_x import evaluate
 
 from Logging import Logging
 
@@ -60,7 +65,7 @@ if __name__ == '__main__':
         range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     val_dataset = data_utils.TestData(val_data)
-    val_batch_sampler = data.BatchSampler(data.RandomSampler(\
+    val_batch_sampler = data.BatchSampler(data.SequentialSampler(\
         range(val_dataset.length)), batch_size=1, drop_last=False)
 
     # Start Training !!!
@@ -96,6 +101,7 @@ if __name__ == '__main__':
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
+        
 
         #import sys; sys.exit()
     log.record("----"*20)
