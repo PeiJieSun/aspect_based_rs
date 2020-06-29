@@ -7,11 +7,11 @@ import config_ncf as conf
 class ncf(nn.Module):
     def __init__(self):
         super(ncf, self).__init__()
-        self.gmf_user_embedding = nn.Embedding(conf.num_users, conf.gmf_embed_dim)
-        self.gmf_item_embedding = nn.Embedding(conf.num_items, conf.gmf_embed_dim)
+        torch.manual_seed(0); self.gmf_user_embedding = nn.Embedding(conf.num_users, conf.gmf_embed_dim)
+        torch.manual_seed(0); self.gmf_item_embedding = nn.Embedding(conf.num_items, conf.gmf_embed_dim)
 
-        self.mlp_user_embedding = nn.Embedding(conf.num_users, conf.mlp_embed_dim)
-        self.mlp_item_embedding = nn.Embedding(conf.num_items, conf.mlp_embed_dim)
+        torch.manual_seed(0); self.mlp_user_embedding = nn.Embedding(conf.num_users, conf.mlp_embed_dim)
+        torch.manual_seed(0); self.mlp_item_embedding = nn.Embedding(conf.num_items, conf.mlp_embed_dim)
 
         self.linears = []
         for idx in range(1, len(conf.mlp_dim_list)):
@@ -33,9 +33,9 @@ class ncf(nn.Module):
         self.mlp_item_embedding.weight = torch.nn.Parameter(0.1 * self.mlp_item_embedding.weight)
 
         for idx in range(len(conf.mlp_dim_list)-1):
-            nn.init.uniform_(self.linears[idx].weight, -0.1, 0.1)
+            torch.manual_seed(0); nn.init.uniform_(self.linears[idx].weight, -0.1, 0.1)
     
-        nn.init.uniform_(self.final_linear.weight, -0.05, 0.05)
+        torch.manual_seed(0); nn.init.uniform_(self.final_linear.weight, -0.05, 0.05)
         nn.init.constant_(self.final_linear.bias, 0.0)
 
         self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
