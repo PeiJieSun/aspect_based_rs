@@ -171,7 +171,7 @@ class cf_gcn(nn.Module):
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj = F.mse_loss(pred, label, reduction='sum')
 
-        obj = 1e-7*rating_obj + 1*review_obj
+        obj = 1*rating_obj + 1e-10*review_obj
 
         return review_out_loss, rating_out_loss, obj
 

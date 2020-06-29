@@ -107,6 +107,10 @@ if __name__ == '__main__':
             #import pdb; pdb.set_trace()
         t1 = time()
 
+
+        # evaluate the performance of the model with following code
+        model.eval()
+
         val_rating_loss = []
         for batch_idx_list in val_batch_sampler:
             values = val_dataset.get_batch(batch_idx_list)
@@ -120,10 +124,10 @@ if __name__ == '__main__':
             out_loss = model.predict_rating(values)
 
             test_rating_loss.extend(tensorToScalar(out_loss))
-
-        # evaluate the performance of the model with following code
-        model.eval()
         
+        train_rating_loss, val_rating_loss, test_rating_loss = \
+            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
+
         if epoch == 1:
             min_rating_loss = val_rating_loss
         if val_rating_loss < min_rating_loss:
@@ -149,12 +153,7 @@ if __name__ == '__main__':
             log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, val_rouge_L_f))
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
-        log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
-        
-
-
-        train_rating_loss, val_rating_loss, test_rating_loss = \
-            np.sqrt(np.mean(train_rating_loss)), np.sqrt(np.mean(val_rating_loss)), np.sqrt(np.mean(test_rating_loss))
+        log.record('NLL Train loss:{:.4f}'.format(np.mean(train_review_loss)))
 
         log.record('Epoch:%d, RMSE Train loss:%.4f, Val loss:%.4f, Test loss:%.4f'%(\
             epoch, train_rating_loss, val_rating_loss, test_rating_loss))
