@@ -31,7 +31,10 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review[:conf.rev_len])
-        train_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
+
+        g_review = g_review[:conf.rev_len]
+        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
+        train_data[idx] = [user, item, rating, review_in, review_out, g_review]
 
         max_user = max(max_user, user)
         max_item = max(max_item, item)
@@ -42,7 +45,10 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review[:conf.rev_len])
-        val_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
+
+        g_review = g_review[:conf.rev_len]
+        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
+        val_data[idx] = [user, item, rating, review_in, review_out, g_review]
     
     test_data = {}
     f = open(test_data_path)
@@ -50,7 +56,10 @@ def load_all():
         line = eval(line)
         user, item, rating, g_review = line['user'], line['item'], line['rating'], line['g_review']
         review_in, review_out = generate_review(g_review[:conf.rev_len])
-        test_data[idx] = [user, item, rating, review_in, review_out, g_review[:conf.rev_len]]
+
+        g_review = g_review[:conf.rev_len]
+        g_review.extend([PAD]*(conf.rev_len-len(g_review)))
+        test_data[idx] = [user, item, rating, review_in, review_out, g_review]
     
     #import pdb; pdb.set_trace()
     return train_data, val_data, test_data
@@ -93,11 +102,9 @@ class TestData():
             rating_list.append(self.train_data[data_idx][2]) # (batch_size, 1)
 
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
-            review_output_list.append(self.train_data[data_idx][4]) #(batch_size, seq_length)
             real_review_list.append(self.train_data[data_idx][5]) #(batch_size, seq_length) real review without PAD
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
-        torch.LongTensor(review_input_list).cuda(), \
-        torch.LongTensor(review_output_list).cuda(), \
+        torch.LongTensor(np.transpose(review_input_list)).cuda(), \
         torch.LongTensor(real_review_list).cuda()
