@@ -9,14 +9,14 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-'''
+
 sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/expansion_net')
 import DataModule_expansion_net as data_utils
 import config_expansion_net as conf
 '''
 import DataModule_gru as data_utils
 import config_gru as conf
-
+'''
 from evaluate import evaluate
 
 from Logging import Logging
@@ -36,14 +36,12 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    from gru import gru
-    model = gru()
-    
-    #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_id_X7.mod'))
+    #from gru import gru
+    #model = gru()
+    from expansion_net import expansion_net
+    model = expansion_net()
+
     model.cuda()
-    
-    #model.encoder.user_embedding.weight.requires_grad = False
-    #model.encoder.item_embedding.weight.requires_grad = False
 
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
 
@@ -82,7 +80,7 @@ if __name__ == '__main__':
         train_review_loss = []
         for batch_idx_list in train_batch_sampler:
             user_list, item_list, _, review_input_list, review_output_list = train_dataset.get_batch(batch_idx_list)
-            out_loss, obj = model(user_list, item_list, review_input_list, review_output_list)
+            out_loss, obj = model(user_list, item_list, review_input_list, review_output_list, None)
             train_review_loss.extend(tensorToScalar(out_loss))
             model.zero_grad(); obj.backward(); optimizer.step()
             #import pdb; pdb.set_trace()
@@ -106,10 +104,9 @@ if __name__ == '__main__':
             test_bleu_4, test_rouge_L_f = evaluate(review_test_dataset, review_test_sampler, model)
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t2)))
             log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (test_bleu_4, test_rouge_L_f))
-        
+
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
-        
 
         #import sys; sys.exit()
     log.record("----"*20)

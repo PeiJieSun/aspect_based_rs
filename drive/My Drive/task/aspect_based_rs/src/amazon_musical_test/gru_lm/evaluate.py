@@ -16,10 +16,11 @@ def evaluate(test_dataset, test_batch_sampler, model):
     hyp_ref_list = []
     
     for batch_idx_list in test_batch_sampler:
-        #user, item, review_input, review_output, real_review = \
-        #    test_dataset.get_batch(batch_idx_list)
-        user, item, review_input, real_review = test_dataset.get_batch(batch_idx_list)
-        sample_idx_list = model._sample_text_by_top_one(user, item, review_input)
+
+        #user, item, review_input, real_review = test_dataset.get_batch(batch_idx_list)
+        user, item, review_input, summary, real_review = test_dataset.get_batch(batch_idx_list)
+
+        sample_idx_list = model._sample_text_by_top_one(user, item, review_input, None)
         ref = tensorToScalar(real_review).tolist()
 
         #import pdb; pdb.set_trace()
