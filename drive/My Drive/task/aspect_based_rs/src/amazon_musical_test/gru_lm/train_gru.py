@@ -17,7 +17,7 @@ import config_expansion_net as conf
 import DataModule_gru as data_utils
 import config_gru as conf
 
-from evaluate_x import evaluate
+from evaluate import evaluate
 
 from Logging import Logging
 
@@ -64,9 +64,13 @@ if __name__ == '__main__':
     train_batch_sampler = data.BatchSampler(data.RandomSampler(\
         range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
-    val_dataset = data_utils.TestData(val_data)
-    val_batch_sampler = data.BatchSampler(data.SequentialSampler(\
-        range(val_dataset.length)), batch_size=1, drop_last=False)
+    review_val_dataset = data_utils.TestData(val_data)
+    review_val_sampler = data.BatchSampler(data.RandomSampler(\
+        range(review_val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+
+    review_test_dataset = data_utils.TestData(test_data)
+    review_test_sampler = data.BatchSampler(data.RandomSampler(\
+        range(review_test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
     max_bleu = 0.0
@@ -88,16 +92,20 @@ if __name__ == '__main__':
         model.eval()
         
         if epoch % 5 == 0:
-            val_bleu_4, rouge_L_f = evaluate(val_dataset, val_batch_sampler, model)
-        
-            if (val_bleu_4+rouge_L_f) > max_bleu:
+            val_bleu_4, val_rouge_L_f = evaluate(review_val_dataset, review_val_sampler, model)
+            if (val_bleu_4+val_rouge_L_f) > max_bleu:
                 torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
-                best_epoch = epoch
-            max_bleu = max(max_bleu, (val_bleu_4+rouge_L_f))
+                review_best_epoch = epoch
+            max_bleu = max(max_bleu, (val_bleu_4+val_rouge_L_f))
 
             t2 = time()
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t2-t1)))
-            log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, rouge_L_f))
+            log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, val_rouge_L_f))
+
+            t3 = time()
+            test_bleu_4, test_rouge_L_f = evaluate(review_test_dataset, review_test_sampler, model)
+            log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t2)))
+            log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (test_bleu_4, test_rouge_L_f))
         
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t1-t0)))
         log.record('Train loss:{:.4f}'.format(np.mean(train_review_loss)))
@@ -105,5 +113,5 @@ if __name__ == '__main__':
 
         #import sys; sys.exit()
     log.record("----"*20)
-    log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")
+    log.record(f"{now()} {conf.data_name}best epoch: {review_best_epoch}")
     log.record("----"*20)
