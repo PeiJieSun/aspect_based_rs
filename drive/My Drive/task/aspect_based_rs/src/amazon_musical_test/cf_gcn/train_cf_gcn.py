@@ -38,7 +38,6 @@ if __name__ == '__main__':
     #model = gru()
     
 
-    '''
     model_params = model.state_dict()
 
     doc_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
@@ -46,12 +45,12 @@ if __name__ == '__main__':
         model_params['encoder.doc_embedding.weight'][idx] = torch.zeros(conf.encoder_word_dim)
     for idx in range(1, conf.num_words):
         model_params['encoder.doc_embedding.weight'][idx] = torch.FloatTensor(doc_embedding.wv[doc_embedding.wv.index2entity[idx-1]])
-    '''
+    model.encoder.doc_embedding.weight.requires_grad = False
+
 
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_lm_id_X7.mod'))
     model.cuda()
-    
-    #model.encoder.doc_embedding.weight.requires_grad = False
+
 
     rating_optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     review_optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
