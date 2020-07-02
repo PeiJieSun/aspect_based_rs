@@ -109,7 +109,7 @@ if __name__ == '__main__':
             train_rating_loss.extend(tensorToScalar(rating_out_loss))
             train_review_loss.extend(tensorToScalar(review_out_loss))
 
-            model.zero_grad(); obj.backward(); rating_optimizer.step()
+            model.zero_grad(); obj.backward(); review_optimizer.step()
         t1 = time()
 
 
