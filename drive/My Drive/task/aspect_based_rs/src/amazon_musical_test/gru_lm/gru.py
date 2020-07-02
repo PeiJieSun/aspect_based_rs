@@ -108,9 +108,6 @@ class gru(nn.Module):
         user, item, review_input = args[0], args[1], args[2]
 
         hidden_state = self.encoder(user, item)
-
-        #import pdb; pdb.set_trace()
-
         next_word_idx = review_input[0]
 
         #import pdb; pdb.set_trace()

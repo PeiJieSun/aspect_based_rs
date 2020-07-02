@@ -67,7 +67,12 @@ class encoder(nn.Module):
         #hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
         #hidden_state = (u_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
-        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() # (1, 1, hidden_dim)
+
+        '''1_REVIEW GENERATION ATTENTION PLEASE!!!'''
+        #### START ------ ****** verify review generation with GRU ****** ####
+        #### FIRST PART #### '''
+        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() ### '''
+        #### ****** verify review generation with GRU ****** ------ END ####
 
         return gamma_u, gamma_i, beta_u, beta_i, hidden_state
 
@@ -90,6 +95,15 @@ class decoder(nn.Module):
         self.linear_x = nn.Linear(conf.hidden_dim, conf.vocab_sz)
 
         self.dropout = nn.Dropout(conf.dropout)
+
+
+        '''2_REVIEW GENERATION ATTENTION PLEASE!!!'''
+        #### START ------ ****** verify review generation with GRU ****** ####
+        #### SECOND PART #### '''
+        torch.manual_seed(0); self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz) ### '''
+        #### ****** verify review generation with GRU ****** ------ END ####
+
+
         self.reinit()
 
     def reinit(self):
@@ -116,6 +130,16 @@ class decoder(nn.Module):
 
         nn.init.zeros_(self.linear_x.bias)
         torch.manual_seed(0); nn.init.xavier_uniform_(self.linear_x.weight)
+
+
+
+        '''3_REVIEW GENERATION ATTENTION PLEASE!!!'''
+        #### START ------ ****** verify review generation with GRU ****** ####
+        #### THIRD PART #### '''
+        torch.manual_seed(0); nn.init.xavier_uniform_(self.rnn_out_linear.weight)
+        nn.init.zeros_(self.rnn_out_linear.bias) ### '''
+        #### ****** verify review generation with GRU ****** ------ END ####
+
         
 
     # value: (seq_len, batch, hidden_dim)
@@ -173,8 +197,15 @@ class decoder(nn.Module):
         #x_aspect_probit = torch.sparse.mm(review_aspect_mask, a_3_t.t()).t() #batch, vocab_sz
         #import  pdb; pdb.set_trace()
 
-
         word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
+
+
+        '''4_REVIEW GENERATION ATTENTION PLEASE!!!'''
+        #### START ------ ****** verify review generation with GRU ****** ####
+        #### FOURTH PART #### '''
+        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) ### '''
+        #### ****** verify review generation with GRU ****** ------ END ####
+
 
         #return PvWt + 1.0*x_aspect_probit, hidden_state
         return word_probit, hidden_state
@@ -242,9 +273,6 @@ class expansion_net(nn.Module):
         for _ in range(conf.rev_len):
             input_vector = self.word_embedding(next_word_idx.view(1, -1))
 
-            #import pdb; pdb.set_trace()
-            #output, hidden_state = self.decoder(input_vector, hidden_state)
-
             slice_word_probit, hidden_state = self.decoder(
                 input_vector, 
                 hidden_state, 
@@ -264,117 +292,3 @@ class expansion_net(nn.Module):
         sample_idx_list = torch.stack(sample_idx_list, 1)#.reshape(-1, conf.rev_len)
         
         return sample_idx_list
-
-
-'''
-class encoder(nn.Module):
-    def __init__(self):
-        super(encoder, self).__init__()
-        torch.manual_seed(0); self.hidden_layer = nn.Linear(conf.mf_dim, conf.hidden_dim)
-    
-        self.reinit()
-
-    def reinit(self):
-        torch.manual_seed(0); nn.init.xavier_uniform_(self.hidden_layer.weight)
-        nn.init.zeros_(self.hidden_layer.bias)
-
-    def forward(self, user, item):
-
-        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda()
-        return hidden_state
-
-class decoder(nn.Module):
-    def __init__(self):
-        super(decoder, self).__init__()
-        #self.rnn = nn.GRU(conf.word_dim, conf.hidden_dim, num_layers=1, dropout=conf.dropout)
-        self.rnn = nn.GRU(conf.word_dim, conf.hidden_dim, num_layers=1)
-
-        self.dropout = nn.Dropout(conf.dropout)
-
-        torch.manual_seed(0); self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz)
-        
-        self.reinit()
-
-    def reinit(self):
-        for name, param in self.rnn.named_parameters():
-            if 'weight' in name:
-                torch.manual_seed(0); nn.init.xavier_uniform_(param.data)
-            else:
-                nn.init.zeros_(param.data)
-
-        torch.manual_seed(0); nn.init.xavier_uniform_(self.rnn_out_linear.weight)
-        nn.init.zeros_(self.rnn_out_linear.bias)
-
-    def forward(self, input_vector, hidden_state=None):
-        input_vector = self.dropout(input_vector)
-
-        if hidden_state == None:
-            output, hidden_state = self.rnn(input_vector)
-        else:
-            output, hidden_state = self.rnn(input_vector, hidden_state)
-
-        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
-
-        return word_probit, hidden_state
-
-class expansion_net(nn.Module): 
-    def __init__(self):
-        super(expansion_net, self).__init__()
-
-        self.encoder = encoder()
-        self.decoder = decoder()
-
-        torch.manual_seed(0); self.word_embedding = nn.Embedding(conf.vocab_sz, conf.word_dim)
-        torch.manual_seed(0); self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz)
-        
-        torch.manual_seed(0); self.rnn = nn.GRU(conf.word_dim, conf.hidden_dim, num_layers=1)
-
-        self.reinit()
-
-    def reinit(self):
-        torch.manual_seed(0); nn.init.xavier_uniform_(self.rnn_out_linear.weight)
-        nn.init.zeros_(self.rnn_out_linear.bias)
-    
-    # user, item, review_input, review_target
-    def forward(self, user, item, review_input, review_target, review_aspect_mask):
-        #user, item, review_input, review_target = values[0], values[1], values[3], values[4]
-        hidden_state = self.encoder(user, item)
-
-        x_word_probit = []
-
-        for t_input in review_input:
-            input_vector = self.word_embedding(t_input.view(1, -1))
-
-            slice_word_probit, hidden_state = self.decoder(input_vector, hidden_state)
-
-            x_word_probit.append(slice_word_probit)
-        
-        word_probit = torch.cat(x_word_probit, dim=0)
-
-        out_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD, reduction='none')
-        obj = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD)
-
-        return out_loss, obj
-
-    def _sample_text_by_top_one(self, user, item, review_input, review_aspect_mask):
-        hidden_state = self.encoder(user, item)
-
-        #import pdb; pdb.set_trace()
-
-        next_word_idx = review_input[0]
-
-        #import pdb; pdb.set_trace()
-        sample_idx_list = [next_word_idx]
-        for _ in range(conf.rev_len):
-            input_vector = self.word_embedding(next_word_idx.view(1, -1))
-
-            slice_word_probit, hidden_state = self.decoder(input_vector, hidden_state)
-            word_probit = slice_word_probit
-            
-            next_word_idx = torch.argmax(word_probit, 1)
-            sample_idx_list.append(next_word_idx)
-
-        sample_idx_list = torch.stack(sample_idx_list, 1)#.reshape(-1, conf.rev_len)
-        
-        return sample_idx_list
-'''

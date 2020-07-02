@@ -25,3 +25,5 @@ data_name = 'amazon_musical_test'
 target_path = '%s/data/%s' % (root_path, data_name)
 out_path = '%s/out/%s' % (root_path, data_name)
 model_path = '%s/out/model' % root_path
+
+dropout = 0.1

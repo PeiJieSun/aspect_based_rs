@@ -34,9 +34,24 @@ class pmf(nn.Module):
 
         prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias
 
-        obj_loss = F.mse_loss(prediction.view(-1), label, reduction='sum') 
-        mse_loss = F.mse_loss(prediction.view(-1), label, reduction='none')
+        obj = F.mse_loss(prediction.view(-1), label, reduction='sum') 
+        rating_loss = F.mse_loss(prediction.view(-1), label, reduction='none')
 
         #import pdb; pdb.set_trace()
 
-        return prediction.view(-1), obj_loss, mse_loss
+        return prediction.view(-1), rating_loss, obj
+
+    def predict_rating(self, user, item, label):
+        user_emb = self.embedding_user(user)
+        item_emb = self.embedding_item(item)
+
+        user_bias = self.user_bias(user)
+        item_bias = self.item_bias(item)
+                
+        output_emb = user_emb * item_emb
+
+        prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias
+
+        rating_loss = F.mse_loss(prediction.view(-1), label, reduction='none')
+
+        return prediction.view(-1), rating_loss

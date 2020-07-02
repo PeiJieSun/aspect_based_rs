@@ -9,14 +9,10 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-
-sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/expansion_net')
-import DataModule_expansion_net as data_utils
-import config_expansion_net as conf
-'''
 import DataModule_gru as data_utils
 import config_gru as conf
-'''
+
+
 from evaluate import evaluate
 
 from Logging import Logging
@@ -36,10 +32,8 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    #from gru import gru
-    #model = gru()
-    from expansion_net import expansion_net
-    model = expansion_net()
+    from gru import gru
+    model = gru()
 
     model.cuda()
 

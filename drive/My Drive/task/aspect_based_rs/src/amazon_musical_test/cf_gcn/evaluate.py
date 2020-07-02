@@ -8,7 +8,7 @@ PAD = 0
 def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
-def evaluate(test_dataset, test_batch_sampler, model):
+def evaluate(test_dataset, test_batch_sampler, model, user_doc, item_doc):
     bleu_score = []
     bleu_list_1, bleu_list_2, bleu_list_3, bleu_list_4 = [], [], [], []
     rouge_1_list, rouge_2_list, rouge_L_list = [], [], []
@@ -16,10 +16,8 @@ def evaluate(test_dataset, test_batch_sampler, model):
     hyp_ref_list = []
 
     for batch_idx_list in test_batch_sampler:
-        user, item, review_input, real_review, user_doc, item_doc =\
-            test_dataset.get_batch(batch_idx_list)
-        sample_idx_list = \
-            model._sample_text_by_top_one(user, item, review_input, user_doc, item_doc)
+        user, item, review_input, real_review = test_dataset.get_batch(batch_idx_list)
+        sample_idx_list = model._sample_text_by_top_one(user, item, review_input, user_doc, item_doc)
 
         #import pdb; pdb.set_trace()
         #for record_idx, hyp in enumerate(tensorToScalar(sample_idx_list)):

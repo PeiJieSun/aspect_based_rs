@@ -19,9 +19,6 @@ final_test_data = open('/content/drive/My Drive/task/A3NCF/python/data/%s.test.d
 abae_vocab_decoder_path = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_musical_test/amazon_musical_test.abae_vocab_decoder.npy'
 abae_vocab_decoder = np.load(abae_vocab_decoder_path, allow_pickle=True).item()
 
-g_decoder_path = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_musical_test/amazon_musical_test.g_vocab_decoder.npy'
-g_decoder = np.load(g_decoder_path, allow_pickle=True).item()
-
 for line in org_train_data:
     line = eval(line)
     user, item, rating, abae_review, g_review =\

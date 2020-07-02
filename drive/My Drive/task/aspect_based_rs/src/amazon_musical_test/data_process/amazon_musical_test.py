@@ -11,6 +11,7 @@ from gensim.models import Word2Vec
 import numpy as np
 from tqdm import tqdm
 from collections import Counter
+from collections import defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def clean_str(string):
@@ -32,7 +33,7 @@ def clean_str(string):
     return string.strip().lower()
 
 ##### 
-# Read file, and stroe the lines with file_data(dict)
+# Read file fromm origin file, and store the lines with file_data(dict)
 #####
 file_data = {}
 total_words = list()
@@ -117,6 +118,9 @@ sent_len_list, sent_num_list, summary_len_list = [], [], []
 #####
 print('Start to write lines to train data...')
 user_idx_dict, item_idx_dict = {}, {}
+
+user_doc, item_doc = defaultdict(list), defaultdict(list)
+
 for line_idx in tqdm(train_idx_list):
     [o_user_id, o_item_id, rating, summary_tokens, sent_token_list] = file_data[line_idx]
     if o_user_id in user_idx_dict:
@@ -137,8 +141,11 @@ for line_idx in tqdm(train_idx_list):
             if word in abae_vocab_without_stop_words and word in abae_vocab:
                 word_id_list.append(abae_vocab[word])
         abae_word_id_list.append(word_id_list)
-
         sent_len_list.append(len(word_id_list))
+
+    user_doc[n_user_id].append(abae_word_id_list)
+    item_doc[n_item_id].append(abae_word_id_list)
+
     sent_num_list.append(len(abae_word_id_list))
 
     sent_word_id_list = []
@@ -154,10 +161,21 @@ for line_idx in tqdm(train_idx_list):
             summary_word_id_list.append(g_vocab[word])
 
     summary_len_list.append(len(summary_word_id_list))
-
+    
     train_data.write('%s\n' % json.dumps({'user': n_user_id, \
         'item': n_item_id, 'rating': rating, 'abae_review': abae_word_id_list,\
         'g_review': sent_word_id_list, 'summary':summary_word_id_list}))
+    
+
+user_sent_num_list, item_sent_num_list = [], []
+for user in user_doc:
+    user_sent_num_list.append(len(user_doc[user]))
+for item in item_doc:
+    item_sent_num_list.append(len(item_doc[item]))
+user_sent_num_list.sort()
+item_sent_num_list.sort()
+print('user max sentence number:%d' % user_sent_num_list[int(0.85*len(user_sent_num_list))])
+print('item max sentence number:%d' % item_sent_num_list[int(0.85*len(item_sent_num_list))])
 
 print('Start to write lines to val data...')
 for line_idx in tqdm(val_idx_list):
@@ -185,9 +203,11 @@ for line_idx in tqdm(val_idx_list):
     for word in summary_tokens:
         if word in g_vocab:
             summary_word_id_list.append(g_vocab[word])
+    
     val_data.write('%s\n' % json.dumps({'user': n_user_id, \
         'item': n_item_id, 'rating': rating, 'abae_review': abae_word_id_list,\
         'g_review': sent_word_id_list, 'summary':summary_word_id_list}))
+    
 
 print('Start to write lines to test data...')
 for line_idx in tqdm(test_idx_list):
@@ -215,9 +235,11 @@ for line_idx in tqdm(test_idx_list):
     for word in summary_tokens:
         if word in g_vocab:
             summary_word_id_list.append(g_vocab[word])
+    
     test_data.write('%s\n' % json.dumps({'user': n_user_id, \
         'item': n_item_id, 'rating': rating, 'abae_review': abae_word_id_list,\
         'g_review': sent_word_id_list, 'summary':summary_word_id_list}))
+    
 
 sent_len_list.sort()
 sent_num_list.sort()

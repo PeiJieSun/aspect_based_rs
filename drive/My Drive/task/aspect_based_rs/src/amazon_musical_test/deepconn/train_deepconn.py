@@ -67,10 +67,13 @@ if __name__ == '__main__':
 
         train_rating_loss, train_prediction = [], []
         for batch_idx_list in train_batch_sampler:
-            user_list, item_list, rating_list, user_doc, item_doc = train_dataset.get_batch(batch_idx_list)
+            user_list, item_list, rating_list, user_doc, item_doc = \
+                train_dataset.get_batch(batch_idx_list)
 
-            obj, rating_loss, prediction = model(user_list, item_list, rating_list, user_doc, item_doc)
-            train_rating_loss.extend(tensorToScalar(rating_loss)); train_prediction.extend(tensorToScalar(prediction))
+            obj, rating_loss, prediction = model(\
+                user_list, item_list, rating_list, user_doc, item_doc)
+            train_rating_loss.extend(tensorToScalar(rating_loss)); 
+            train_prediction.extend(tensorToScalar(prediction))
             
             model.zero_grad(); obj.backward(); optimizer.step()
         t1 = time()
@@ -80,16 +83,22 @@ if __name__ == '__main__':
 
         val_rating_loss, val_prediction = [], []
         for batch_idx_list in val_batch_sampler:
-            user_list, item_list, rating_list, user_doc, item_doc = val_dataset.get_batch(batch_idx_list)
-            obj, rating_loss, prediction = model(user_list, item_list, rating_list, user_doc, item_doc)
-            val_prediction.extend(tensorToScalar(prediction)); val_rating_loss.extend(tensorToScalar(rating_loss))
+            user_list, item_list, rating_list, user_doc, item_doc = \
+                val_dataset.get_batch(batch_idx_list)
+            obj, rating_loss, prediction = model(\
+                user_list, item_list, rating_list, user_doc, item_doc)
+            val_prediction.extend(tensorToScalar(prediction)); 
+            val_rating_loss.extend(tensorToScalar(rating_loss))
         t2 = time()
 
         test_rating_loss, test_prediction = [], []
         for batch_idx_list in test_batch_sampler:
-            user_list, item_list, rating_list, user_doc, item_doc = test_dataset.get_batch(batch_idx_list)
-            obj, rating_loss, prediction = model(user_list, item_list, rating_list, user_doc, item_doc)
-            test_prediction.extend(tensorToScalar(prediction)); test_rating_loss.extend(tensorToScalar(rating_loss))
+            user_list, item_list, rating_list, user_doc, item_doc = \
+                test_dataset.get_batch(batch_idx_list)
+            obj, rating_loss, prediction = model(\
+                user_list, item_list, rating_list, user_doc, item_doc)
+            test_prediction.extend(tensorToScalar(prediction)); 
+            test_rating_loss.extend(tensorToScalar(rating_loss))
         t3 = time()
 
         train_loss, val_loss, test_loss = np.sqrt(np.mean(train_rating_loss)), \

@@ -99,7 +99,6 @@ class TestData():
         for data_idx in batch_idx_list:
             user_list.append(self.train_data[data_idx][0]) # (batch_size, 1)
             item_list.append(self.train_data[data_idx][1]) # (batch_size, 1)
-            rating_list.append(self.train_data[data_idx][2]) # (batch_size, 1)
 
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
             real_review_list.append(self.train_data[data_idx][5]) #(batch_size, seq_length) real review without PAD

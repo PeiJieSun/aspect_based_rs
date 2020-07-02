@@ -16,9 +16,9 @@ test_data_path = '%s/%s.test.data' % (conf.target_path, conf.data_name)
 
 def generate_review(review):
     review_in = review[:-1]
-    review_in.extend([PAD]*(30-len(review_in)))
+    review_in.extend([PAD]*(conf.rev_len-len(review_in)))
     review_out = review[1:]
-    review_out.extend([PAD]*(30-len(review_out)))
+    review_out.extend([PAD]*(conf.rev_len-len(review_out)))
     return review_in, review_out
 
 def load_all():
@@ -121,6 +121,7 @@ class TrainData():
             user_doc_list.append(self.user_doc_dict[user])
             item_doc_list.append(self.item_doc_dict[item])
             
+
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.FloatTensor(rating_list).cuda(), \
@@ -130,12 +131,9 @@ class TrainData():
         torch.LongTensor(item_doc_list).cuda()
 
 class TestData():
-    def __init__(self, train_data, user_doc_dict, item_doc_dict):
+    def __init__(self, train_data):
         self.train_data = train_data
         self.length = len(train_data.keys())
-
-        self.user_doc_dict = user_doc_dict
-        self.item_doc_dict = item_doc_dict
     
     def get_batch(self, batch_idx_list):
         user_list, item_list = [], []
@@ -149,15 +147,8 @@ class TestData():
 
             review_input_list.append(self.train_data[data_idx][3]) #(batch_size, seq_length)
             real_review_list.append(self.train_data[data_idx][5]) #(batch_size, seq_length) real review without PAD
-
-            user, item = self.train_data[data_idx][0], self.train_data[data_idx][1]
-
-            user_doc_list.append(self.user_doc_dict[user])
-            item_doc_list.append(self.item_doc_dict[item])
-
+            
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
         torch.LongTensor(np.transpose(review_input_list)).cuda(), \
-        torch.LongTensor(real_review_list).cuda(), \
-        torch.LongTensor(user_doc_list).cuda(), \
-        torch.LongTensor(item_doc_list).cuda()
+        torch.LongTensor(real_review_list).cuda()

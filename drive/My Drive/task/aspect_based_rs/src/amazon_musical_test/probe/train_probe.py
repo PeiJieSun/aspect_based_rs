@@ -9,7 +9,7 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-model_name = 'expansion_net'
+model_name = 'mrg'
 sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/%s' % model_name)
 
 exec('import DataModule_%s as data_utils' % model_name)
@@ -56,11 +56,11 @@ if __name__ == '__main__':
         range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     val_dataset = data_utils.TrainData(val_data)
-    val_batch_sampler = data.BatchSampler(data.RandomSampler(\
+    val_batch_sampler = data.BatchSampler(data.SequentialSampler(\
         range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     test_dataset = data_utils.TrainData(test_data)
-    test_batch_sampler = data.BatchSampler(data.RandomSampler(\
+    test_batch_sampler = data.BatchSampler(data.SequentialSampler(\
         range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!

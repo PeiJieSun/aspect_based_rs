@@ -30,12 +30,8 @@ def tensorToScalar(tensor):
 
 if __name__ == '__main__':
     ############################## CREATE MODEL ##############################
-    #from expansion_net import expansion_net
-    #model = expansion_net()
-
-    sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/gru_lm')
-    from gru import gru
-    model  = gru()
+    from expansion_net import expansion_net
+    model = expansion_net()
 
     model.cuda()
 
