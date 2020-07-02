@@ -36,12 +36,14 @@ class encoder(nn.Module):
 
         hidden_state = torch.tanh(self.hidden_layer(user_embed+item_embed))\
             .view(1, -1, conf.hidden_dim) # (1, batch_size, hidden_dimension)
-        #import pdb; pdb.set_trace()
+
 
         '''1_REVIEW GENERATION ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### FIRST PART #### '''
-        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() ### '''
+        #### FIRST PART #### 
+        '''
+        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
         return hidden_state, user_embed, item_embed
@@ -112,8 +114,10 @@ class decoder(nn.Module):
 
         ''''ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### FOURTH PART #### '''
-        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) ### '''
+        #### FOURTH PART #### 
+        '''
+        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
         return word_probit, hidden_state
@@ -137,6 +141,7 @@ class att2seq(nn.Module):
     def forward(self, user, item, review_input, review_target):
         hidden_state, user_embed, item_embed = self.encoder(user, item)
 
+
         x_word_probit = []
         for t_input in review_input:
             input_vector = self.word_embedding(t_input.view(1, -1))
@@ -144,7 +149,7 @@ class att2seq(nn.Module):
             x_word_probit.append(slice_word_probit)
         word_probit = torch.cat(x_word_probit, dim=0)
         
-        #import pdb; pdb.set_trace()
+
         out_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD, reduction='none')
         obj = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD)
 
@@ -153,11 +158,8 @@ class att2seq(nn.Module):
     def _sample_text_by_top_one(self, user, item, review_input):
         hidden_state, user_embed, item_embed = self.encoder(user, item)
 
-        #import pdb; pdb.set_trace()
 
         next_word_idx = review_input[0]
-
-        #import pdb; pdb.set_trace()
         sample_idx_list = [next_word_idx]
         for _ in range(conf.rev_len):
             input_vector = self.word_embedding(next_word_idx).reshape(1, user.shape[0], -1)
@@ -166,6 +168,7 @@ class att2seq(nn.Module):
             word_probit = slice_word_probit
             next_word_idx = torch.argmax(word_probit, 1)
             sample_idx_list.append(next_word_idx)
+
 
         sample_idx_list = torch.stack(sample_idx_list, dim=0).transpose(0, 1)
         return sample_idx_list
