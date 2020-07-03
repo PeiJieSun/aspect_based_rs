@@ -109,8 +109,8 @@ class decoder_fm(nn.Module):
         self.user_fc_linear = nn.Linear(conf.asp_dim, conf.mf_dim)
         self.item_fc_linear = nn.Linear(conf.asp_dim, conf.mf_dim)
 
-        #self.free_user_embedding = nn.Embedding(conf.num_users, conf.mf_dim)
-        #self.free_item_embedding = nn.Embedding(conf.num_items, conf.mf_dim)
+        self.free_user_embedding = nn.Embedding(conf.num_users, conf.mf_dim)
+        self.free_item_embedding = nn.Embedding(conf.num_items, conf.mf_dim)
 
         self.dropout = nn.Dropout(conf.dropout)
 
@@ -129,8 +129,8 @@ class decoder_fm(nn.Module):
             torch.manual_seed(0); nn.init.uniform_(fc.weight, -0.1, 0.1)
             torch.manual_seed(0); nn.init.constant_(fc.bias, 0.1)
 
-        #nn.init.xavier_normal_(self.free_user_embedding.weight)
-        #nn.init.xavier_normal_(self.free_item_embedding.weight)
+        torch.manual_seed(0); nn.init.uniform_(self.free_user_embedding.weight, -0.05, 0.05)
+        torch.manual_seed(0); nn.init.uniform_(self.free_item_embedding.weight, -0.05, 0.05)
 
         torch.manual_seed(0); nn.init.uniform_(self.fc.weight, -0.05, 0.05)
         torch.manual_seed(0); nn.init.constant_(self.fc.bias, 0.0)
@@ -144,8 +144,8 @@ class decoder_fm(nn.Module):
         i_fea = self.item_fc_linear(aspect_item_embed)
 
         
-        u_out = u_fea #+ 0.0 * self.free_user_embedding(user)
-        i_out = i_fea #+ 0.0 * self.free_item_embedding(item)
+        u_out = u_fea + 0.0 * self.free_user_embedding(user)
+        i_out = i_fea + 0.0 * self.free_item_embedding(item)
 
         input_vec = torch.cat([u_out, i_out], 1)
 
@@ -159,7 +159,8 @@ class decoder_fm(nn.Module):
         fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
                                      torch.pow(self.fm_V, 2))
         fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) \
-            + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating
+            + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating\
+            + torch.sum(self.free_user_embedding(user)*self.free_item_embedding(item), 1, keepdim=True)
         
         prediction = fm_output.squeeze(1)
 
@@ -227,5 +228,5 @@ class abae_rs(nn.Module):
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
-        obj_loss = 1.0*rating_obj_loss + 1e-6*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
+        obj_loss = 1.0*rating_obj_loss + 0*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
         return rating_out_loss, obj_loss, pred
