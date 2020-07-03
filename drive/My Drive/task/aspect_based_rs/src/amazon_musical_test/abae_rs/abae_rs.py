@@ -175,24 +175,28 @@ class abae_rs(nn.Module):
 
         '''1_RATING PREDICTION ATTENTION PLEASE!!!'''
         #### START ------ ****** veriify rating prediction with PMF ****** ####
-        #### FIRST PART #### '''
+        #### FIRST PART #### 
+        '''
         torch.manual_seed(0); self.embedding_user = nn.Embedding(conf.num_users, conf.mf_dim)
         torch.manual_seed(0); self.embedding_item = nn.Embedding(conf.num_items, conf.mf_dim)
         self.user_bias = nn.Embedding(conf.num_users, 1)
         self.item_bias = nn.Embedding(conf.num_items, 1)
         self.avg_rating = torch.FloatTensor([conf.avg_rating]).cuda() 
         
-        self.reinit() ### '''
+        self.reinit() ### 
+        '''
         #### ****** veriify rating prediction with PMF ****** ------ END ####
 
     def reinit(self):
         '''2_RATING PREDICTION ATTENTION PLEASE!!!'''
         #### START ------ ****** veriify rating prediction with PMF ****** ####
-        #### SECOND PART #### '''
+        #### SECOND PART #### 
+        '''
         self.embedding_user.weight = torch.nn.Parameter(0.1 * self.embedding_user.weight)
         self.embedding_item.weight = torch.nn.Parameter(0.1 * self.embedding_item.weight)
         self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
-        self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1)) ### '''
+        self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1)) ### 
+        '''
         #### ****** veriify rating prediction with PMF ****** ------ END ####
 
     def forward(self, user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent):
@@ -208,19 +212,21 @@ class abae_rs(nn.Module):
 
         '''3_RATING PREDICTION ATTENTION PLEASE!!!'''
         #### START ------ ****** veriify rating prediction with PMF ****** ####
-        #### THIRD PART #### '''
+        #### THIRD PART #### 
+        '''
         user_emb = self.embedding_user(user)
         item_emb = self.embedding_item(item)
         user_bias = self.user_bias(user)
         item_bias = self.item_bias(item)
         output_emb = user_emb * item_emb
         x_prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias
-        pred = x_prediction.view(-1)  ### '''
+        pred = x_prediction.view(-1)  ### 
+        '''
         #### START ------ ****** veriify rating prediction with PMF ****** ####
 
 
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
-        obj_loss = 1.0*rating_obj_loss + 0*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
+        obj_loss = 1.0*rating_obj_loss + 1e-1*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
         return rating_out_loss, obj_loss, pred
