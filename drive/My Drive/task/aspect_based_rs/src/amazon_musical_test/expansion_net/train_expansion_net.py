@@ -95,7 +95,8 @@ if __name__ == '__main__':
         model.eval()
         
         if epoch % 5 == 0:
-            val_bleu_4, rouge_L_f = evaluate(review_val_dataset, review_val_sampler, model, review_aspect_mask)
+            val_bleu_4, rouge_L_f = evaluate(review_val_dataset, \
+                review_val_sampler, model, review_aspect_mask)
         
             if (val_bleu_4+rouge_L_f) > max_bleu:
                 torch.save(model.state_dict(), '%s_%d.mod' % (train_model_path, epoch))
@@ -107,7 +108,8 @@ if __name__ == '__main__':
             log.record('Val: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (val_bleu_4, rouge_L_f))
 
             t3 = time()
-            test_bleu_4, test_rouge_L_f = evaluate(review_test_dataset, review_test_sampler, model)
+            test_bleu_4, test_rouge_L_f = evaluate(review_test_dataset, \
+                review_test_sampler, model, review_aspect_mask)
             log.record('Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t2)))
             log.record('Test: BLEU_4:%.4f, ROUGE_L_F:%.4f' % (test_bleu_4, test_rouge_L_f))
         

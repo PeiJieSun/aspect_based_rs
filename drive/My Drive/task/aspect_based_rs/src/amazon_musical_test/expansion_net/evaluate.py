@@ -8,7 +8,7 @@ PAD = 0
 def tensorToScalar(tensor):
     return tensor.cpu().detach().numpy()
 
-def evaluate(test_dataset, test_batch_sampler, model, review_aspect_mask=None):
+def evaluate(test_dataset, test_batch_sampler, model, review_aspect_mask):
     model.eval()
     
     bleu_score = []

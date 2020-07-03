@@ -59,19 +59,16 @@ class encoder(nn.Module):
         u_vector = torch.tanh(self.linear_eq_3(torch.cat([gamma_u, gamma_i], 1))) # (batch_size, hidden_dim)
         v_vector = torch.tanh(self.linear_eq_4(torch.cat([beta_u, beta_i], 1))) # (batch_size, hidden_dim)
         
-        #import pdb; pdb.set_trace()
-
-        #hidden_state = (u_vector + v_vector + outputs[-1]).view(\
-        #    1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
-
-        #hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
+        hidden_state = (u_vector + v_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
         #hidden_state = (u_vector).view(1, user.shape[0], conf.hidden_dim) # (1, batch, hidden_size=n)
 
 
         '''1_REVIEW GENERATION ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### FIRST PART #### '''
-        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() ### '''
+        #### FIRST PART #### 
+        '''
+        hidden_state = torch.zeros(1, user.shape[0], conf.hidden_dim).cuda() ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
         return gamma_u, gamma_i, beta_u, beta_i, hidden_state
@@ -99,8 +96,10 @@ class decoder(nn.Module):
 
         '''2_REVIEW GENERATION ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### SECOND PART #### '''
-        torch.manual_seed(0); self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz) ### '''
+        #### SECOND PART #### 
+        '''
+        torch.manual_seed(0); self.rnn_out_linear = nn.Linear(conf.hidden_dim, conf.vocab_sz) ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
 
@@ -135,9 +134,11 @@ class decoder(nn.Module):
 
         '''3_REVIEW GENERATION ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### THIRD PART #### '''
+        #### THIRD PART #### 
+        '''
         torch.manual_seed(0); nn.init.xavier_uniform_(self.rnn_out_linear.weight)
-        nn.init.zeros_(self.rnn_out_linear.bias) ### '''
+        nn.init.zeros_(self.rnn_out_linear.bias) ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
         
@@ -194,7 +195,7 @@ class decoder(nn.Module):
         #import pdb; pdb.set_trace()
         #aspect_probit = torch.index_select(a_3_t, 1, review_aspect) * review_aspect_mask # (seq_length*batch_size, vocab_sz)
         
-        #x_aspect_probit = torch.sparse.mm(review_aspect_mask, a_3_t.t()).t() #batch, vocab_sz
+        x_aspect_probit = torch.sparse.mm(review_aspect_mask, a_3_t.t()).t() #batch, vocab_sz
         #import  pdb; pdb.set_trace()
 
         word_probit = self.linear_x(hidden_state.view(-1, conf.hidden_dim)) # (batch, vocab_sz)
@@ -202,13 +203,15 @@ class decoder(nn.Module):
 
         '''4_REVIEW GENERATION ATTENTION PLEASE!!!'''
         #### START ------ ****** verify review generation with GRU ****** ####
-        #### FOURTH PART #### '''
-        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) ### '''
+        #### FOURTH PART #### 
+        '''
+        word_probit = self.rnn_out_linear(hidden_state.view(-1, conf.hidden_dim)) ### 
+        '''
         #### ****** verify review generation with GRU ****** ------ END ####
 
 
-        #return PvWt + 1.0*x_aspect_probit, hidden_state
-        return word_probit, hidden_state
+        return PvWt + 1.0*x_aspect_probit, hidden_state
+        #return word_probit, hidden_state
         #return PvWt, hidden_state
 
 class expansion_net(nn.Module): 
