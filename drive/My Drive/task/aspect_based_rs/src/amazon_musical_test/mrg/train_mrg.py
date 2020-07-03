@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
             #review_out_loss, obj = model(user_list, item_list, review_input_list, review_output_list)
 
-            model.zero_grad(); obj.backward(); rating_optimizer.step()
+            model.zero_grad(); obj.backward(); review_optimizer.step()
 
             train_rating_loss.extend(tensorToScalar(rating_out_loss))
             train_review_loss.extend(tensorToScalar(review_out_loss))
