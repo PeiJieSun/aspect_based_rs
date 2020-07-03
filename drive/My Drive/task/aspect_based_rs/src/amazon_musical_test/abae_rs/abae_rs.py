@@ -228,5 +228,5 @@ class abae_rs(nn.Module):
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
-        obj_loss = 1.0*rating_obj_loss + 1e-6*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
+        obj_loss = 1.0*rating_obj_loss + 1e-7*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
         return rating_out_loss, obj_loss, pred
