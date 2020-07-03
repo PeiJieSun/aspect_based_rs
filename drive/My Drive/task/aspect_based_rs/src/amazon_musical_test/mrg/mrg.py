@@ -73,7 +73,7 @@ class decoder_rating(nn.Module):
 class decoder_review(nn.Module):
     def __init__(self):
         super(decoder_review, self).__init__()
-        self.rnn = nn.GRU(conf.word_dim+0*conf.mlp_dim_list[-1], conf.hidden_dim, num_layers=1)
+        self.rnn = nn.GRU(conf.word_dim+1*conf.mlp_dim_list[-1], conf.hidden_dim, num_layers=1)
         self.dropout = nn.Dropout(conf.dropout)
 
 
@@ -158,7 +158,7 @@ class mrg(nn.Module):
         x_word_probit = []
         for t_input in review_input:
             input_vector = self.word_embedding(t_input.view(1, -1))
-            #input_vector = torch.cat([input_vector, mlp_concat_emebd.view(1, user.shape[0], -1)], dim=2)
+            input_vector = torch.cat([input_vector, mlp_concat_emebd.view(1, user.shape[0], -1)], dim=2)
 
             slice_word_probit, hidden_state = self.decoder_review(input_vector, hidden_state)
             x_word_probit.append(slice_word_probit)
@@ -189,7 +189,7 @@ class mrg(nn.Module):
         review_out_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD, reduction='none')
         review_obj_loss = F.cross_entropy(word_probit, review_target.reshape(-1), ignore_index=PAD)
 
-        obj = 0.0 * rating_obj_loss + 1.0 * review_obj_loss
+        obj = 1.0 * rating_obj_loss + 1e-10 * review_obj_loss
 
         return rating_out_loss, review_out_loss, obj
     
@@ -226,7 +226,7 @@ class mrg(nn.Module):
         sample_idx_list = [next_word_idx]
         for _ in range(conf.rev_len):
             input_vector = self.word_embedding(next_word_idx).reshape(1, -1, conf.word_dim)
-            #input_vector = torch.cat([input_vector, mlp_concat_emebd], dim=2)
+            input_vector = torch.cat([input_vector, mlp_concat_emebd], dim=2)
 
             slice_word_probit, hidden_state = self.decoder_review(input_vector, hidden_state)
             word_probit = slice_word_probit
