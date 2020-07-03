@@ -30,7 +30,7 @@ num_items = 900
 mf_dim = 32
 
 dropout = 0.5
-avg_rating = 4.4848
+avg_rating = 4.4867
 
 
 #### NCF parameters ####

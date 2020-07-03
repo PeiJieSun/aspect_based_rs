@@ -18,6 +18,8 @@ test_data_path = '%s/%s.test.data' % (conf.target_path, conf.data_name)
 def load_all():
     train_rating_list = []
 
+    max_user, max_item = 0, 0
+
     train_data = {}
     f = open(train_data_path)
     for idx, line in enumerate(f):
@@ -26,6 +28,9 @@ def load_all():
         train_data[idx] = [user, item, rating]
 
         train_rating_list.append(rating)
+
+        max_user = max(user, max_user)
+        max_item = max(item, max_item)
     avg_rating = np.mean(train_rating_list)
 
 
@@ -54,6 +59,9 @@ def load_all():
     print('Test RMSE:%.4f' % np.sqrt(np.mean((test_rating_list-avg_rating)**2)))
 
     print('avg rating:%.4f' % avg_rating)
+
+    print('max user:%d, max item:%d' % (max_user+1, max_item+1))
+
     return train_data, val_data, test_data
         
         

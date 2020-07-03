@@ -2,7 +2,7 @@ weight_decay = 0.02
 learning_rate = 0.002
 mf_dim = 32
 
-avg_rating = 4.4848
+avg_rating = 4.4867
 
 num_users = 1429
 num_items = 900
