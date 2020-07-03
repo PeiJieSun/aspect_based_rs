@@ -122,30 +122,6 @@ class decoder_fm(nn.Module):
         self.b_users = nn.Parameter(torch.randn(conf.num_users, 1))
         self.b_items = nn.Parameter(torch.randn(conf.num_items, 1))
 
-        '''
-        ## ********************************************* ##
-        self.gmf_user_embedding = nn.Embedding(conf.num_users, conf.gmf_embed_dim)
-        self.gmf_item_embedding = nn.Embedding(conf.num_items, conf.gmf_embed_dim)
-
-        self.mlp_user_embedding = nn.Embedding(conf.num_users, conf.mlp_embed_dim)
-        self.mlp_item_embedding = nn.Embedding(conf.num_items, conf.mlp_embed_dim)
-
-        self.fea_linears = []
-        for idx in range(1, len(conf.mlp_dim_list)):
-            self.fea_linears.append(nn.Linear(conf.mlp_dim_list[idx-1], conf.mlp_dim_list[idx], bias=False).cuda())
-        
-        self.mlp_linears = []
-        for idx in range(1, len(conf.mlp_dim_list)):
-            self.mlp_linears.append(nn.Linear(conf.mlp_dim_list[idx-1], conf.mlp_dim_list[idx], bias=False).cuda())
-
-        self.att_linear = nn.Linear(conf.mf_dim, 1)
-
-        self.final_linear = nn.Linear(1*conf.mlp_embed_dim+0*conf.gmf_embed_dim+0*conf.mf_dim, 1)
-
-        self.user_bias = nn.Embedding(conf.num_users, 1)
-        self.item_bias = nn.Embedding(conf.num_items, 1)
-        ## ********************************************* ##
-        '''
         self.reinit()
 
     def reinit(self):
@@ -162,37 +138,6 @@ class decoder_fm(nn.Module):
         torch.manual_seed(0); nn.init.uniform_(self.b_items, a=0, b=0.1)
         torch.manual_seed(0); nn.init.uniform_(self.fm_V, -0.05, 0.05)
 
-        '''
-        ## ********************************************* ##
-        self.gmf_user_embedding.weight = torch.nn.Parameter(0.1 * self.gmf_user_embedding.weight)
-        self.gmf_item_embedding.weight = torch.nn.Parameter(0.1 * self.gmf_item_embedding.weight)
-
-        self.mlp_user_embedding.weight = torch.nn.Parameter(0.1 * self.mlp_user_embedding.weight)
-        self.mlp_item_embedding.weight = torch.nn.Parameter(0.1 * self.mlp_item_embedding.weight)
-
-        
-        for idx in range(len(conf.mlp_dim_list)-1):
-            nn.init.uniform_(self.fea_linears[idx].weight, -0.1, 0.1)
-
-        nn.init.uniform_(self.final_linear.weight, -0.05, 0.05)
-        nn.init.constant_(self.final_linear.bias, 0.0)
-
-        self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
-        self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1))
-        ## ********************************************* ##
-        '''
-    '''    
-    def attention(self, mlp_concat_emebd, concat_fea):
-        m_1 = torch.exp(torch.tanh(self.att_linear(mlp_concat_emebd))) #  (batch, 1)
-        m_2 = torch.exp(torch.tanh(self.att_linear(concat_fea))) # (batch, 1)
-        m_3 = m_1 + m_2
-        a_1 = m_1 / m_3
-        a_2 = m_2 / m_3
-        self.a_1 = a_1
-        self.a_2 = a_2
-        #import pdb; pdb.set_trace()
-        return a_1 * mlp_concat_emebd + a_2 * concat_fea
-    '''
 
     def forward(self, user, item, aspect_user_embed, aspect_item_embed):
         u_fea = self.user_fc_linear(aspect_user_embed)
@@ -217,53 +162,7 @@ class decoder_fm(nn.Module):
             + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating
         
         prediction = fm_output.squeeze(1)
-        '''
 
-        ## ********************************************* ##
-        
-        
-        gmf_user_embed = self.gmf_user_embedding(user)
-        gmf_item_embed = self.gmf_item_embedding(item)
-
-        mlp_user_embed = self.mlp_user_embedding(user)
-        mlp_item_embed = self.mlp_item_embedding(item)
-                
-        gmf_concat_embed = gmf_user_embed * gmf_item_embed
-        
-        mlp_concat_emebd = torch.cat([mlp_user_embed, mlp_item_embed], dim=1)
-        for idx in range(len(conf.mlp_dim_list)-1):
-            mlp_concat_emebd = torch.relu(self.fea_linears[idx](mlp_concat_emebd))
-
-        concat_fea = torch.cat([u_fea, i_fea], dim=1)
-        for idx in range(len(conf.mlp_dim_list)-1):
-            concat_fea = torch.relu(self.mlp_linears[idx](concat_fea))
-        
-        user_bias = self.user_bias(user)
-        item_bias = self.item_bias(item)
-        
-        #final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd, u_fea, i_fea], dim=1)
-        #final_embed = torch.cat([mlp_concat_emebd, concat_fea], dim=1)
-        final_embed = self.attention(mlp_concat_emebd, concat_fea)
-        #prediction = self.final_linear(final_embed) + conf.avg_rating + user_bias + item_bias
-        ## ********************************************* ##
-
-        #input_vec = torch.cat([mlp_concat_emebd, concat_fea], 1)
-        input_vec = torch.cat([gmf_user_embed, gmf_item_embed], dim=1)
-
-        #input_vec = self.dropout(input_vec)
-
-        fm_linear_part = self.fc(input_vec)
-
-        fm_interactions_1 = torch.mm(input_vec, self.fm_V)
-        fm_interactions_1 = torch.pow(fm_interactions_1, 2)
-
-        fm_interactions_2 = torch.mm(torch.pow(input_vec, 2),
-                                     torch.pow(self.fm_V, 2))
-        fm_output = 0.5 * torch.sum(fm_interactions_1 - fm_interactions_2, 1, keepdim=True) \
-            + fm_linear_part + 1.0 * self.b_users[user] + 1.0 * self.b_items[item] + 1.0 * conf.avg_rating
-        
-        prediction = fm_output.squeeze(1)
-        '''
         return prediction.view(-1)
 
 class abae_rs(nn.Module):
@@ -273,6 +172,32 @@ class abae_rs(nn.Module):
         self.encoder = encoder_abae()
         self.decoder = decoder_fm()
 
+        '''1_RATING PREDICTION ATTENTION PLEASE!!!'''
+        #### START ------ ****** veriify rating prediction with PMF ****** ####
+        #### FIRST PART #### 
+        '''
+        torch.manual_seed(0); self.embedding_user = nn.Embedding(conf.num_users, conf.mf_dim)
+        torch.manual_seed(0); self.embedding_item = nn.Embedding(conf.num_items, conf.mf_dim)
+        self.user_bias = nn.Embedding(conf.num_users, 1)
+        self.item_bias = nn.Embedding(conf.num_items, 1)
+        self.avg_rating = torch.FloatTensor([conf.avg_rating]).cuda() 
+        
+        self.reinit() ### 
+        '''
+        #### ****** veriify rating prediction with PMF ****** ------ END ####
+
+    def reinit(self):
+        '''2_RATING PREDICTION ATTENTION PLEASE!!!'''
+        #### START ------ ****** veriify rating prediction with PMF ****** ####
+        #### SECOND PART #### 
+        '''
+        self.embedding_user.weight = torch.nn.Parameter(0.1 * self.embedding_user.weight)
+        self.embedding_item.weight = torch.nn.Parameter(0.1 * self.embedding_item.weight)
+        self.user_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_users, 1))
+        self.item_bias.weight = torch.nn.Parameter(torch.zeros(conf.num_items, 1)) ### 
+        '''
+        #### ****** veriify rating prediction with PMF ****** ------ END ####
+
     def forward(self, user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent):
         aspect_user_embed, user_J_loss, user_U_loss = self.encoder(user_pos_sent, user_neg_sent)
         aspect_item_embed, item_J_loss, item_U_loss = self.encoder(item_pos_sent, item_neg_sent)
@@ -280,14 +205,27 @@ class abae_rs(nn.Module):
         aspect_user_embed = torch.mean(aspect_user_embed.reshape(-1, conf.user_seq_num, conf.asp_dim), dim=1)
         aspect_item_embed = torch.mean(aspect_item_embed.reshape(-1, conf.item_seq_num, conf.asp_dim), dim=1)
 
-        #import pdb; pdb.set_trace()
 
-        #aspect_user_embed = None; aspect_item_embed = None
+        pred = self.decoder(user, item, aspect_user_embed, aspect_item_embed)
 
-        rating_pred = self.decoder(user, item, aspect_user_embed, aspect_item_embed)
 
-        rating_out_loss = F.mse_loss(rating_pred, label, reduction='none')
-        rating_obj_loss = F.mse_loss(rating_pred, label, reduction='sum')
+        '''3_RATING PREDICTION ATTENTION PLEASE!!!'''
+        #### START ------ ****** veriify rating prediction with PMF ****** ####
+        #### THIRD PART #### 
+        '''
+        user_emb = self.embedding_user(user)
+        item_emb = self.embedding_item(item)
+        user_bias = self.user_bias(user)
+        item_bias = self.item_bias(item)
+        output_emb = user_emb * item_emb
+        x_prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias
+        pred = x_prediction.view(-1)  ### 
+        '''
+        #### START ------ ****** veriify rating prediction with PMF ****** ####
+
+
+        rating_out_loss = F.mse_loss(pred, label, reduction='none')
+        rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
         obj_loss = 1.0*rating_obj_loss + 0*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
-        return rating_out_loss, obj_loss, rating_pred
+        return rating_out_loss, obj_loss, pred
