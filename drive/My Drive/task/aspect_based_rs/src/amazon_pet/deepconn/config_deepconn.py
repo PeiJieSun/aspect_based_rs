@@ -1,11 +1,11 @@
 
 word_dim = 200
-num_users = 24301
-num_items = 10672
+num_users = 19853
+num_items = 8510
 embedding_dim = 32
-vocab_sz = 35902
+vocab_sz = 16602
 
-avg_rating = 4.0855
+avg_rating = 4.2297
 
 dropout = 0.5
 
@@ -14,13 +14,13 @@ train_epochs = 30
 weight_decay = 0.02
 learning_rate = 0.002
 
-seq_len = 14
-sent_num = 17
-user_seq_num = 10
-item_seq_num = 27
+seq_len = 11
+sent_num = 8
+user_seq_num = 9
+item_seq_num = 22
 
 root_path = '/content/drive/My Drive/task/aspect_based_rs'
-data_name = 'amazon_videos_test'
+data_name = 'amazon_pet'
 target_path = '%s/data/%s' % (root_path, data_name)
 out_path = '%s/out/%s' % (root_path, data_name)
 model_path = '%s/out/model' % root_path

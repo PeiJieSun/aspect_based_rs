@@ -1,8 +1,8 @@
 import numpy as np
 
-origin_dir = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_musical_test'
+data_name = 'amazon_videos_test'
+origin_dir = '/content/drive/My Drive/task/aspect_based_rs/data/%s' % data_name
 target_dir = '/content/'
-data_name = 'amazon_musical_test'
 
 org_train_data = open('%s/%s.train.data' % (origin_dir, data_name))
 org_val_data = open('%s/%s.val.data' % (origin_dir, data_name))
@@ -16,7 +16,7 @@ final_train_data = open('/content/drive/My Drive/task/A3NCF/python/data/%s.train
 final_val_data = open('/content/drive/My Drive/task/A3NCF/python/data/%s.val.dat' % data_name, 'w')
 final_test_data = open('/content/drive/My Drive/task/A3NCF/python/data/%s.test.dat' % data_name, 'w')
 
-abae_vocab_decoder_path = '/content/drive/My Drive/task/aspect_based_rs/data/amazon_musical_test/amazon_musical_test.abae_vocab_decoder.npy'
+abae_vocab_decoder_path = '/content/drive/My Drive/task/aspect_based_rs/data/%s/%s.abae_vocab_decoder.npy' % (data_name, data_name)
 abae_vocab_decoder = np.load(abae_vocab_decoder_path, allow_pickle=True).item()
 
 for line in org_train_data:
