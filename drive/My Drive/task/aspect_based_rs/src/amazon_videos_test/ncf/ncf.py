@@ -17,8 +17,8 @@ class ncf(nn.Module):
         for idx in range(1, len(conf.mlp_dim_list)):
             self.linears.append(nn.Linear(conf.mlp_dim_list[idx-1], conf.mlp_dim_list[idx], bias=False).cuda())
 
-        #self.final_linear = nn.Linear(conf.mlp_embed_dim+conf.gmf_embed_dim, 1)
-        self.final_linear = nn.Linear(conf.mlp_embed_dim, 1)
+        self.final_linear = nn.Linear(conf.mlp_embed_dim+conf.gmf_embed_dim, 1)
+        #self.final_linear = nn.Linear(conf.mlp_embed_dim, 1)
 
         self.user_bias = nn.Embedding(conf.num_users, 1)
         self.item_bias = nn.Embedding(conf.num_items, 1)
@@ -81,7 +81,8 @@ class ncf(nn.Module):
         item_bias = self.item_bias(item)
         
         final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
+        #prediction = self.final_linear(gmf_concat_embed+mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
+        prediction = self.final_linear(final_embed) + conf.avg_rating + user_bias + item_bias
         
         pred = prediction.view(-1)
 
