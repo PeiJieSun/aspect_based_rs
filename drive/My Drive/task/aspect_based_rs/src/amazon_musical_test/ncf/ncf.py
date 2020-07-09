@@ -81,7 +81,7 @@ class ncf(nn.Module):
         item_bias = self.item_bias(item)
         
         final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
+        prediction = self.final_linear(gmf_concat_embed+mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
         
         pred = prediction.view(-1)
 

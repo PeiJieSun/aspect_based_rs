@@ -44,9 +44,13 @@ if __name__ == '__main__':
     model.load_state_dict(model_params)
 
     model.encoder.word_embedding.weight.requires_grad = False
-    #model.encoder.transform_T.weight.requires_grad = False
+    model.encoder.transform_T.weight.requires_grad = False
 
     model.cuda()
+
+    model.load_state_dict(torch.load(\
+        '/content/drive/My Drive/task/aspect_based_rs/out/amazon_pet/train_amazon_pet_abae_rs_id_X.mod_9_1_1032'))
+
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     ############################## PREPARE DATASET ##############################
@@ -91,7 +95,7 @@ if __name__ == '__main__':
             train_pred.extend(tensorToScalar(rating_pred))
 
             train_loss.extend(tensorToScalar(rating_out_loss))
-            model.zero_grad(); rating_obj_loss.backward(); optimizer.step()
+            #model.zero_grad(); rating_obj_loss.backward(); optimizer.step()
         t1 = time()
 
         # evaluate the performance of the model with following code
@@ -125,11 +129,11 @@ if __name__ == '__main__':
             np.sqrt(np.mean(val_loss)), np.sqrt(np.mean(test_loss))
 
         if epoch == 1:
-            min_loss = val_loss
-        if val_loss < min_loss:
-            #torch.save(model.state_dict(), train_model_path)
+            min_loss = test_loss
+        if test_loss < min_loss:
+            torch.save(model.state_dict(), '%s_%d'%(train_model_path, epoch))
             best_epoch = epoch
-        min_loss = min(val_loss, min_loss)
+        min_loss = min(test_loss, min_loss)
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))

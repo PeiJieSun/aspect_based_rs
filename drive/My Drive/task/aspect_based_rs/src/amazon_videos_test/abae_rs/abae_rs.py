@@ -158,7 +158,7 @@ class decoder_fm(nn.Module):
         
         gmf_concat_embed = torch.cat([gmf_user_embed, gmf_item_embed], dim=1)
         for idx in range(len(conf.mlp_dim_list)-1):
-            gmf_concat_embed = torch.tanh(self.x_linears[idx](gmf_concat_embed))
+            gmf_concat_embed = torch.relu(self.x_linears[idx](gmf_concat_embed))
 
         mlp_user_embed = self.user_fc_linear(aspect_user_embed)
         mlp_item_embed = self.item_fc_linear(aspect_item_embed)
@@ -168,7 +168,7 @@ class decoder_fm(nn.Module):
             mlp_concat_emebd = torch.relu(self.linears[idx](mlp_concat_emebd))
         
         #final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(gmf_concat_embed + 0*mlp_concat_emebd) + conf.avg_rating + \
+        prediction = self.final_linear(1*gmf_concat_embed + 1*mlp_concat_emebd) + conf.avg_rating + \
             self.user_bias(user) + self.item_bias(item)
 
         return prediction.view(-1)
@@ -234,5 +234,5 @@ class abae_rs(nn.Module):
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
-        obj_loss = 1.0*rating_obj_loss #+ 3e-1*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
+        obj_loss = 1.0*rating_obj_loss + 1e-5*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
         return pred, obj_loss, rating_out_loss
