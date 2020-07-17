@@ -1,6 +1,6 @@
 import numpy as np
 
-data_name = 'amazon_videos_test'
+data_name = 'amazon_musical_test'
 origin_dir = '/content/drive/My Drive/task/aspect_based_rs/data/%s' % data_name
 target_dir = '/content/'
 

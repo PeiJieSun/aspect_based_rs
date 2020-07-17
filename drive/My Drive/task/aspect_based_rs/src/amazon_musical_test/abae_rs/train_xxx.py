@@ -9,8 +9,8 @@ from time import time, strftime
 from copy import deepcopy
 from gensim.models import Word2Vec
 
-import DataModule_ncf as data_utils
-import config_ncf as conf
+import DataModule_abae_rs as data_utils
+import config_abae_rs as conf
 
 from Logging import Logging
 
@@ -18,7 +18,6 @@ def now():
     return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
-    import os
     save_path = os.path.dirname(os.path.abspath(file_path))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -30,24 +29,16 @@ if __name__ == '__main__':
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
     t0 = time()
-    train_data, val_data, test_data = data_utils.load_all()
+    train_data, val_data, test_data, user_seq_dict, item_seq_dict = data_utils.load_all()
     t1 = time()
     print('Data has been loaded successfully, cost:%.4fs' % (t1 - t0))
     
     ############################## CREATE MODEL ##############################
-    from ncf import ncf
-    model = ncf()
-
-
-    sys.path.append('/content/drive/My Drive/task/aspect_based_rs/src/amazon_musical_test/abae_rs')
     from abae_rs import abae_rs
     model = abae_rs()
-
-    #import pdb; pdb.set_trace()
     
     #model.load_state_dict(torch.load('/content/drive/My Drive/task/aspect_based_rs/out/amazon_clothing/train_amazon_clothing_pmf_id_X1.mod'))
     model.cuda()
-    #optimizer = torch.optim.SGD(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
 
@@ -57,9 +48,9 @@ if __name__ == '__main__':
     train_model_path = '%s/train_%s_ncf_id_X1.mod' % (conf.out_path, conf.data_name)
 
     # prepare data for the training stage
-    train_dataset = data_utils.TrainData(train_data)
-    val_dataset = data_utils.TrainData(val_data)
-    test_dataset = data_utils.TrainData(test_data)
+    train_dataset = data_utils.TrainData(train_data, user_seq_dict, item_seq_dict)
+    val_dataset = data_utils.TrainData(val_data, user_seq_dict, item_seq_dict)
+    test_dataset = data_utils.TrainData(test_data, user_seq_dict, item_seq_dict)
 
     train_batch_sampler = data.BatchSampler(data.RandomSampler(\
         range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
@@ -110,7 +101,6 @@ if __name__ == '__main__':
             min_rating_loss = val_loss
         if val_loss < min_rating_loss:
             #torch.save(model.state_dict(), train_model_path)
-            #print('save model')
             best_epoch = epoch
         min_rating_loss = min(val_loss, min_rating_loss)
         
@@ -121,13 +111,6 @@ if __name__ == '__main__':
         log.record('Val prediction mean:%.4f, var:%.4f' % (np.mean(val_prediction), np.var(val_prediction)))
         log.record('Test prediction mean:%.4f, var:%.4f' % (np.mean(test_prediction), np.var(test_prediction)))
 
-        '''
-        log.record('user embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.embedding_user.weight).item(), torch.var(model.embedding_user.weight).item()))
-        log.record('item embedding mean:%.4f, var:%.4f' % \
-            (torch.mean(model.embedding_item.weight).item(), torch.var(model.embedding_item.weight).item()))
-        '''
-        #import pdb; pdb.set_trace()
 
     log.record("----"*20)
     log.record(f"{now()} {conf.data_name}best epoch: {best_epoch}")

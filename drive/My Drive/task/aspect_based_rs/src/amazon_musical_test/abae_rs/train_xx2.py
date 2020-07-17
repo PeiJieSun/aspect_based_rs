@@ -18,7 +18,6 @@ def now():
     return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
-    import os
     save_path = os.path.dirname(os.path.abspath(file_path))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -31,24 +30,6 @@ if __name__ == '__main__':
     from abae_rs import abae_rs
     model = abae_rs()
     
-    model_params = model.state_dict()
-    word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
-    for idx in range(1):
-        model_params['encoder.word_embedding.weight'][idx] = torch.zeros(conf.word_dim)
-    for idx in range(1, conf.vocab_sz):
-        model_params['encoder.word_embedding.weight'][idx] = torch.FloatTensor(word_embedding.wv[word_embedding.wv.index2entity[idx-1]])
-
-    k_means_weight = np.load('%s/%s.k_means_15.npy' % (conf.target_path, conf.data_name)) # (aspect_dimesion, word_dimension)
-    model_params['encoder.transform_T.weight'] = torch.FloatTensor(k_means_weight.transpose()) # (word_dim,  asp_dim)
-    
-    model.load_state_dict(model_params)
-
-    model.encoder.word_embedding.weight.requires_grad = False
-    model.encoder.transform_T.weight.requires_grad = False
-    
-    model.load_state_dict(torch.load(\
-        '/content/drive/My Drive/task/aspect_based_rs/out/amazon_videos_test/train_amazon_videos_test_abae_rs_id_X.mod_9_1_0393'))
-
     model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
@@ -86,15 +67,17 @@ if __name__ == '__main__':
 
         train_loss = []
         for batch_idx_list in train_batch_sampler:
-            user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
-                item_neg_sent = train_dataset.get_batch(batch_idx_list)
+            user, item, label = train_dataset.get_batch(batch_idx_list)
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_pred, rating_obj_loss, rating_out_loss  = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             train_pred.extend(tensorToScalar(rating_pred))
 
             train_loss.extend(tensorToScalar(rating_out_loss))
-            #model.zero_grad(); rating_obj_loss.backward(); optimizer.step()
+            model.zero_grad(); rating_obj_loss.backward(); optimizer.step()
         t1 = time()
 
         # evaluate the performance of the model with following code
@@ -102,10 +85,13 @@ if __name__ == '__main__':
         
         val_loss = []
         for batch_idx_list in val_batch_sampler:
-            user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
-                item_neg_sent = val_dataset.get_batch(batch_idx_list)
+            user, item, label = val_dataset.get_batch(batch_idx_list)
+            
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_pred, rating_obj_loss, rating_out_loss = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             val_pred.extend(tensorToScalar(rating_pred))
 
@@ -114,10 +100,12 @@ if __name__ == '__main__':
 
         test_loss = []
         for batch_idx_list in test_batch_sampler:
-            user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
-                item_neg_sent = test_dataset.get_batch(batch_idx_list)
+            user, item, label = test_dataset.get_batch(batch_idx_list)
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_pred, rating_obj_loss, rating_out_loss = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             test_pred.extend(tensorToScalar(rating_pred))
 
@@ -128,11 +116,11 @@ if __name__ == '__main__':
             np.sqrt(np.mean(val_loss)), np.sqrt(np.mean(test_loss))
 
         if epoch == 1:
-            min_loss = test_loss
-        if test_loss < min_loss:
-            torch.save(model.state_dict(), '%s_%d' % (train_model_path, epoch))
+            min_loss = val_loss
+        if val_loss < min_loss:
+            #torch.save(model.state_dict(), train_model_path)
             best_epoch = epoch
-        min_loss = min(test_loss, min_loss)
+        min_loss = min(val_loss, min_loss)
 
         log.record('Training Stage: Epoch:{}, compute loss cost:{:.4f}s'.format(epoch, (t3-t0)))
         log.record('Train loss:{:.4f}, Val loss:{:.4f}, Test loss:{:.4f}'.format(train_loss, val_loss, test_loss))

@@ -64,7 +64,10 @@ class ncf(nn.Module):
         '''
         #### ****** veriify rating prediction with PMF ****** ------ END ####
 
-    def forward(self, user, item, label):
+    #def forward(self, user, item, label):
+    def forward(self, *args):
+        user, item, label = args[0], args[1], args[2]
+
         gmf_user_embed = self.gmf_user_embedding(user)
         gmf_item_embed = self.gmf_item_embedding(item)
 
@@ -81,7 +84,7 @@ class ncf(nn.Module):
         item_bias = self.item_bias(item)
         
         final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(gmf_concat_embed+mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
+        prediction = self.final_linear(0*gmf_concat_embed+1*mlp_concat_emebd) + conf.avg_rating + user_bias + item_bias
         
         pred = prediction.view(-1)
 

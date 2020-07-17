@@ -18,7 +18,6 @@ def now():
     return str(strftime('%Y-%m-%d %H:%M:%S'))
 
 def check_dir(file_path):
-    import os
     save_path = os.path.dirname(os.path.abspath(file_path))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -31,6 +30,7 @@ if __name__ == '__main__':
     from abae_rs import abae_rs
     model = abae_rs()
     
+    '''
     model_params = model.state_dict()
     word_embedding = Word2Vec.load('%s/%s.wv.model' % (conf.target_path, conf.data_name))
     for idx in range(1):
@@ -45,9 +45,10 @@ if __name__ == '__main__':
 
     model.encoder.word_embedding.weight.requires_grad = False
     model.encoder.transform_T.weight.requires_grad = False
-    
+    '''
+
     model.cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.learning_rate, weight_decay=conf.weight_decay)
 
     ############################## PREPARE DATASET ##############################
     print('System start to load data...')
@@ -66,12 +67,12 @@ if __name__ == '__main__':
     val_dataset = data_utils.TrainData(val_data, user_seq_dict, item_seq_dict)
     test_dataset = data_utils.TrainData(test_data, user_seq_dict, item_seq_dict)
 
-    train_batch_sampler = data.BatchSampler(\
-        data.RandomSampler(range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    val_batch_sampler = data.BatchSampler(\
-        data.RandomSampler(range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
-    test_batch_sampler = data.BatchSampler(\
-        data.RandomSampler(range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    train_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(train_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    val_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(val_dataset.length)), batch_size=conf.batch_size, drop_last=False)
+    test_batch_sampler = data.BatchSampler(data.RandomSampler(\
+        range(test_dataset.length)), batch_size=conf.batch_size, drop_last=False)
 
     # Start Training !!!
     min_loss = 0
@@ -85,8 +86,11 @@ if __name__ == '__main__':
         for batch_idx_list in train_batch_sampler:
             user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
                 item_neg_sent = train_dataset.get_batch(batch_idx_list)
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_out_loss, rating_obj_loss, rating_pred = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             train_pred.extend(tensorToScalar(rating_pred))
 
@@ -101,8 +105,12 @@ if __name__ == '__main__':
         for batch_idx_list in val_batch_sampler:
             user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
                 item_neg_sent = val_dataset.get_batch(batch_idx_list)
+            
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_out_loss, rating_obj_loss, rating_pred = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             val_pred.extend(tensorToScalar(rating_pred))
 
@@ -113,8 +121,11 @@ if __name__ == '__main__':
         for batch_idx_list in test_batch_sampler:
             user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, \
                 item_neg_sent = test_dataset.get_batch(batch_idx_list)
+            #rating_out_loss, rating_obj_loss, rating_pred = \
+            #    model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+
             rating_out_loss, rating_obj_loss, rating_pred = \
-                model(user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent)
+                model(user, item, label)
 
             test_pred.extend(tensorToScalar(rating_pred))
 

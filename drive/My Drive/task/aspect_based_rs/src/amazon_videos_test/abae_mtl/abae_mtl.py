@@ -151,7 +151,7 @@ class decoder_fm(nn.Module):
         nn.init.zeros_(self.user_bias.weight)
         nn.init.zeros_(self.item_bias.weight)
 
-    '''
+
     def forward(self, user, item, aspect_user_embed, aspect_item_embed):
         gmf_user_embed = self.gmf_user_embedding(user)
         gmf_item_embed = self.gmf_item_embedding(item)
@@ -168,22 +168,7 @@ class decoder_fm(nn.Module):
             mlp_concat_emebd = torch.relu(self.linears[idx](mlp_concat_emebd))
         
         #final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(1*gmf_concat_embed + 0*mlp_concat_emebd) + conf.avg_rating + \
-            self.user_bias(user) + self.item_bias(item)
-
-        return prediction.view(-1)
-    '''
-    
-    def forward(self, user, item):
-        gmf_user_embed = self.gmf_user_embedding(user)
-        gmf_item_embed = self.gmf_item_embedding(item)
-        
-        gmf_concat_embed = torch.cat([gmf_user_embed, gmf_item_embed], dim=1)
-        for idx in range(len(conf.mlp_dim_list)-1):
-            gmf_concat_embed = torch.relu(self.x_linears[idx](gmf_concat_embed))
-        
-        #final_embed = torch.cat([gmf_concat_embed, mlp_concat_emebd], dim=1)
-        prediction = self.final_linear(1*gmf_concat_embed) + conf.avg_rating + \
+        prediction = self.final_linear(1*gmf_concat_embed + 1*mlp_concat_emebd) + conf.avg_rating + \
             self.user_bias(user) + self.item_bias(item)
 
         return prediction.view(-1)
@@ -223,7 +208,8 @@ class abae_rs(nn.Module):
         #### ****** veriify rating prediction with PMF ****** ------ END ####
 
         
-    def _forward(self, user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent):
+
+    def forward(self, user, item, label, user_pos_sent, user_neg_sent, item_pos_sent, item_neg_sent):
         aspect_user_embed, user_J_loss, user_U_loss = self.encoder(user_pos_sent, user_neg_sent)
         aspect_item_embed, item_J_loss, item_U_loss = self.encoder(item_pos_sent, item_neg_sent)
 
@@ -248,27 +234,5 @@ class abae_rs(nn.Module):
         rating_out_loss = F.mse_loss(pred, label, reduction='none')
         rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
 
-        obj_loss = 1.0*rating_obj_loss + 0*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
-        return pred, obj_loss, rating_out_loss
-
-    def forward(self, user, item, label):
-        pred = self.decoder(user, item)
-
-        '''3_RATING PREDICTION ATTENTION PLEASE!!!'''
-        #### START ------ ****** veriify rating prediction with PMF ****** ####
-        #### THIRD PART #### 
-        '''
-        user_emb = self.embedding_user(user)
-        item_emb = self.embedding_item(item)
-        user_bias = self.user_bias(user)
-        item_bias = self.item_bias(item)
-        output_emb = user_emb * item_emb
-        x_prediction = torch.sum(output_emb, 1, keepdims=True) + self.avg_rating + user_bias + item_bias
-        pred = x_prediction.view(-1)  ### '''
-        #### START ------ ****** veriify rating prediction with PMF ****** ####
-
-        rating_out_loss = F.mse_loss(pred, label, reduction='none')
-        rating_obj_loss = F.mse_loss(pred, label, reduction='sum')
-
-        obj_loss = 1.0*rating_obj_loss #+ 0*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
+        obj_loss = 1.0*rating_obj_loss + 1e-7*(user_J_loss+item_J_loss+user_U_loss+item_U_loss)
         return pred, obj_loss, rating_out_loss

@@ -120,26 +120,9 @@ class TrainData():
 
         return torch.LongTensor(user_list).cuda(), \
         torch.LongTensor(item_list).cuda(), \
-        torch.FloatTensor(label_list).cuda()
-        ''', \
+        torch.FloatTensor(label_list).cuda(), \
         torch.LongTensor(user_pos_sent).cuda(), \
         torch.LongTensor(user_neg_sent).cuda(), \
         torch.LongTensor(item_pos_sent).cuda(), \
         torch.LongTensor(item_neg_sent).cuda()
-        '''
         
-class TrainData_2():
-    def __init__(self, train_data):
-        self.train_data = train_data
-        self.length = len(train_data.keys())
-
-    def get_batch(self, batch_idx_list):
-        user_list, item_list, rating_list = [], [], []
-        for idx in batch_idx_list:
-            user_list.append(self.train_data[idx][0])
-            item_list.append(self.train_data[idx][1])
-            rating_list.append(self.train_data[idx][2])
-
-        return torch.LongTensor(user_list).cuda(), \
-        torch.LongTensor(item_list).cuda(), \
-        torch.FloatTensor(rating_list).cuda()

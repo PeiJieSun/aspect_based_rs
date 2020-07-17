@@ -6,7 +6,7 @@ mlp_embed_dim = 32
 
 mlp_dim_list = [64, 128, 64, 32]
 
-avg_rating = 4.4848
+avg_rating = 4.4867
 
 num_users = 1429
 num_items = 900
